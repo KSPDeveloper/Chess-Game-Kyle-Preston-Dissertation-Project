@@ -734,7 +734,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1199316339}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f395cbcfb7de3344b4b686b74bc811b, type: 3}
+  m_Script: {fileID: 11500000, guid: 2bbb5c65545688743aeaa1e3cbf46db9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   playerTurn: {fileID: 907800354}
@@ -744,13 +744,12 @@ MonoBehaviour:
   board: {fileID: 821757002}
   whiteGraveyard: {fileID: 1775721655}
   blackGraveyard: {fileID: 1054832103}
-  ChessboardReference: {fileID: 0}
   lightList: []
   lights: []
-  whitePiecesPositions: []
-  blackPiecesPositions: []
   whitePossiblePositions: []
   blackPossiblePositions: []
+  ProtectedWhitePieces: []
+  ProtectedBlackPieces: []
 --- !u!1001 &1346758272
 PrefabInstance:
   m_ObjectHideFlags: 0
