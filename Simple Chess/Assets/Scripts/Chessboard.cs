@@ -5,17 +5,22 @@ using System;
 
 public class Chessboard : MonoBehaviour
 {
-    int numberOfPossibleMovesB, numberOfPossibleMovesW;
+    public bool checkMate = false;
+    public int numberOfPossibleMovesB, numberOfPossibleMovesW;
     public UIEngine UIEngineReference;
-    public bool whiteToMove = true;
+    public bool whiteToMove = true, check = false;
     public Material white, black;
     public GameObject Pawn, Knight, Queen, Bishop, Rook, King, chessBoard;
     public bool startingPosition = true;
-    public List<Vector3> whiteSpaces, blackSpaces;
+    public List<Vector3> whiteSpaces, blackSpaces, lineOfCheck, piecesChecking, pinnedPieces; // piecesChecking is a list which contains the positons of the pieces putting the king into check
+    public Dictionary<Vector3, List<Vector3>> pinnedPiecePath = new Dictionary<Vector3, List<Vector3>>();  // Piece Being Pinned, Path it is being pinned on //
     public GameObject[] pieces = new GameObject[32];
     public Vector3[,] chessBoard2D = new Vector3[8, 8];
     public Dictionary<Vector3, GameObject> piecePosition = new Dictionary<Vector3, GameObject>();
+    public Vector3 pinnedPiece;
     float bXMax = 8.75f, bXMin = 0f, bZMax = 8.75f, bZMin = 0f;
+    public int piecesPuttingKingInCheck = 0;
+
     void Start()
     {
         float xPos = 0.0f;
@@ -120,10 +125,10 @@ public class Chessboard : MonoBehaviour
             pieces[i].transform.localScale = new Vector3(1, 1, 1);
             pieces[i].transform.localRotation = new Quaternion(0, 0, 0, 0);
             pieces[i].GetComponent<Renderer>().material = black;
+            pieces[i].AddComponent<Track>();
             pieces[i].tag = "Black";
             piecePosition.Add(chessBoard2D[i - 24, 7], pieces[i]);
         }
-        //CheckBoard(ref UIEngineReference.whitePiecesPositions, ref UIEngineReference.blackPiecesPositions);
     }
 
     public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
@@ -156,104 +161,301 @@ public class Chessboard : MonoBehaviour
         {
             QueenMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
         }
-
     }
 
-    public void PawnMovement(GameObject pawn, ref List<Vector3> lightList)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList)
     {
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
-        Vector3 temp = pawn.transform.localPosition;
+        Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
         Vector3[] directions = new Vector3[2];
         directions[0] = new Vector3(1.25f, 0, 0); //move right
         directions[1] = new Vector3(-1.25f, 0, 0); //move left
-        if (pawn.tag == "White")
-        {
-            //move forward one//
-            tempMove = temp + moveForward;
-            if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
-            {
-                lightList.Add(tempMove);
-            }
 
-            if (pawn.GetComponent<Track>().startingPosition == true)
+        if (check == false)
+        {
+            if (selectedPiece.GetComponent<Track>().pinned == false) // Normal movement
             {
-                //move forward two
-                tempMove = temp;
-                tempMove += moveForward;
-                if (!piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "White")
                 {
-                    tempMove += moveForward;
-                    if (!piecePosition.ContainsKey(tempMove))
+                    //move forward one//
+                    tempMove = startingPos + moveForward;
+                    if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    {
+                        numberOfPossibleMovesW++;
+                        lightList.Add(tempMove);
+                    }
+
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        //move forward two
+                        tempMove = startingPos;
+                        tempMove += moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove += moveForward;
+                            if (!piecePosition.ContainsKey(tempMove))
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                            }
+                        }
+                    }
+
+                    //Up Left / Right
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove += moveForward + dir; // gets forward one, right / left one position
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesChecking.Add(tempMove);
+                                    piecesPuttingKingInCheck += 1;
+                                }
+
+                                else
+                                {
+                                    numberOfPossibleMovesW++;
+                                    lightList.Add(tempMove);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                else if (selectedPiece.tag == "Black")
+                {
+                    //move forward one//
+                    startingPos = selectedPiece.transform.localPosition;
+                    tempMove = startingPos - moveForward;
+                    if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
                         lightList.Add(tempMove);
+                        numberOfPossibleMovesB++;
+                    }
+
+                    //Used only for when the pawn has not moved from its stating position
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        //move forward 2
+                        tempMove = startingPos;
+                        tempMove -= moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove -= moveForward;
+                            if (!piecePosition.ContainsKey(tempMove))
+                            {
+                                lightList.Add(tempMove);
+                                numberOfPossibleMovesB++;
+                            }
+                        }
+                    }
+
+                    //Up Left / Right
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= moveForward - dir; // gets forward one, right / left one position
+
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesChecking.Add(tempMove);
+                                    piecesPuttingKingInCheck += 1;
+                                }
+                                else
+                                {
+                                    lightList.Add(tempMove);
+                                    numberOfPossibleMovesB++;
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            //Up Left / Right
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == true) // Can only move forwards or take a piece that is pinning it
             {
-                tempMove = temp; //resets tempUp
-                tempMove += moveForward + dir; // gets forward one, right / left one position
-                if (piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "White")
                 {
-                    if (piecePosition[tempMove].tag == "Black")
+                    //move forward one//
+                    tempMove = startingPos + moveForward;
+                    if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
                     {
                         lightList.Add(tempMove);
+                        numberOfPossibleMovesW++;
+                    }
+
+                    //move forward two
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        tempMove = startingPos;
+                        tempMove += moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove += moveForward;
+                            if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
+                            {
+                                lightList.Add(tempMove);
+                                numberOfPossibleMovesW++;
+                            }
+                        }
+                    }
+
+                    //Up Left / Right
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove += moveForward + dir; // gets forward one, right / left one position
+                        if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
+                        {
+                            lightList.Add(tempMove);
+                            numberOfPossibleMovesW++;
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //move forward one//
+                    tempMove = startingPos - moveForward;
+                    if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
+                    {
+                        numberOfPossibleMovesB++;
+                        lightList.Add(tempMove);
+                    }
+
+                    //move forward two
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove -= moveForward;
+                            if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                            }
+                        }
+                    }
+
+                    //Up Left / Right
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= moveForward - dir; // gets forward one, right / left one position
+                        if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
                     }
                 }
             }
         }
 
-        else if (pawn.tag == "Black")
+        if (check == true)
         {
-            //move forward one//
-            temp = pawn.transform.localPosition;
-            tempMove = temp - moveForward;
-            if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+            if (selectedPiece.GetComponent<Track>().pinned == false) //Can only move to block or take a piece pinning.
             {
-                lightList.Add(tempMove);
-            }
-
-            //Used only for when the pawn has not moved from its stating position
-            if (pawn.GetComponent<Track>().startingPosition == true)
-            {
-                //move forward 2
-                tempMove = temp;
-                tempMove -= moveForward;
-                if (!piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "White")
                 {
-                    tempMove -= moveForward;
-                    if (!piecePosition.ContainsKey(tempMove))
+                    //Move forward one
+                    tempMove = startingPos + moveForward;
+                    if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
                         lightList.Add(tempMove);
+                        numberOfPossibleMovesW++;
+                    }
+
+                    //move forward two (starting pos only)
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        tempMove = startingPos;
+                        tempMove += moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove += moveForward;
+                            if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                            }
+                        }
+                    }
+                    // Take the piece checking
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove += moveForward + dir; // gets forward one, right / left one position
+                        if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //Move forward one
+                    tempMove = startingPos - moveForward;
+                    if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                    {
+                        numberOfPossibleMovesB++;
+                        lightList.Add(tempMove);
+                    }
+
+                    //move forward two (starting pos only)
+                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= moveForward;
+                        if (!piecePosition.ContainsKey(tempMove))
+                        {
+                            tempMove += moveForward;
+                            if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                            }
+                        }
+                    }
+                    // Take the piece checking
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= moveForward - dir; // gets forward one, right / left one position
+                        if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
                     }
                 }
             }
 
-            //Up Left / Right
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == true) // can't move
             {
-                tempMove = temp; //resets tempUp
-                tempMove -= moveForward - dir; // gets forward one, right / left one position
 
-                if (piecePosition.ContainsKey(tempMove))
-                {
-                    if (piecePosition[tempMove].tag == "White")
-                    {
-                        lightList.Add(tempMove);
-                    }
-                }
             }
+
         }
-
     }
 
     public void PawnTakePositions(GameObject pawn, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
-        Vector3 temp = pawn.transform.localPosition;
+        Vector3 startingPos = pawn.transform.localPosition;
         Vector3 tempMove;
         Vector3[] directions = new Vector3[2];
         directions[0] = new Vector3(1.25f, 0, 0); //move right
@@ -263,10 +465,11 @@ public class Chessboard : MonoBehaviour
             //Up Left / Right
             foreach (Vector3 dir in directions)
             {
-                tempMove = temp; //resets tempUp
+                tempMove = startingPos; //resets tempUp
                 tempMove += moveForward + dir; // gets forward one, right / left one position
                 if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                 {
+                    numberOfPossibleMovesW++;
                     lightList.Add(tempMove);
                 }
 
@@ -285,10 +488,11 @@ public class Chessboard : MonoBehaviour
             //Down Left / Right
             foreach (Vector3 dir in directions)
             {
-                tempMove = temp; //resets tempUp
+                tempMove = startingPos; //resets tempUp
                 tempMove -= moveForward - dir; // gets forward one, right / left one position
                 if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                 {
+                    numberOfPossibleMovesB++;
                     lightList.Add(tempMove);
                 }
 
@@ -306,73 +510,297 @@ public class Chessboard : MonoBehaviour
 
     void RookMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
-        Vector3 temp = selectedPiece.transform.localPosition;
-        Vector3 tempMove = temp;
+        int wPossibleMoves = 0;
+        int bPossibleMoves = 0;
+        bool pieceFound = false;
+        Vector3 startingPos = selectedPiece.transform.localPosition;
+        Vector3 tempMove;
         Vector3[] directions = new Vector3[4];
-        directions[0] = new Vector3(1.25f, 0, 0); // moveForward
+        directions[0] = new Vector3(1.25f, 0, 0);  // moveForward
         directions[1] = new Vector3(-1.25f, 0, 0); // moveBackward
-        directions[2] = new Vector3(0, 0, 1.25f); // moveRight
+        directions[2] = new Vector3(0, 0, 1.25f);  // moveRight
         directions[3] = new Vector3(0, 0, -1.25f); // moveLeft
 
-        if (selectedPiece.tag == "White")
+        if (check == true)
         {
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == false) //Movement can only be made when blocking, or taking a piece checking the king.
             {
-                tempMove = temp;
-                tempMove += dir;
-                //regular movement with no pieces in the way
-
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    lightList.Add(tempMove);
-                    tempMove += dir;
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+
+                    //CHECK FOR BLOCK OR TAKE
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        //regular movement with no pieces in the way
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                            }
+                            tempMove += dir;
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+                    }
                 }
-                // checks if the next space has a takeable piece on it
-                if (piecePosition.ContainsKey(tempMove))
-                {
-                    if (piecePosition[tempMove].tag == "Black")
-                    {
-                        lightList.Add(tempMove);
-                    }
 
-                    if (piecePosition[tempMove].tag == "White")
+                if (selectedPiece.tag == "Black")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+
+                    //CHECK FOR BLOCK OR TAKE
+                    foreach (Vector3 dir in directions)
                     {
-                        pWPieces.Add(tempMove);
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                            }
+                            tempMove -= dir;
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
                     }
+                }
+            }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) // Movement cannot be made
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
             }
         }
 
-        if (selectedPiece.tag == "Black")
+        if (check == false)
         {
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == false) //Full mobility of the piece
             {
-                tempMove = temp;
-                tempMove -= dir;
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    lightList.Add(tempMove);
-                    tempMove -= dir;
-                }
-                if (piecePosition.ContainsKey(tempMove))
-                {
-                    if (piecePosition[tempMove].tag == "White")
+                    foreach (Vector3 dir in directions)
                     {
-                        lightList.Add(tempMove);
-                    }
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos); //adds the position of the piece to the list.
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        //regular movement with no pieces in the way
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                            tempMoves.Add(tempMove);
+                            tempMove += dir;
+                        }
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                    Vector3 tmp = tempMove;
+                                    for (int i = 0; tmp != selectedPiece.transform.localPosition; i++)
+                                    {
+                                        tmp -= dir;
+                                        if (tmp != selectedPiece.transform.localPosition)
+                                        {
+                                            lineOfCheck.Add(tmp);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    numberOfPossibleMovesW++;
+                                    lightList.Add(tempMove);
+                                    pinnedPiece = tempMove;
+                                    pieceFound = true;
+                                }
+                            }
 
-                    if (piecePosition[tempMove].tag == "Black")
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove += dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove += dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove) && !pinnedPiecePath.ContainsKey(pinnedPiece) && !pinnedPiecePath.ContainsValue(tempMoves))
+                            {
+                                if (piecePosition[tempMove].tag == "Black" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    foreach (Vector3 dir in directions)
                     {
-                        pBPieces.Add(tempMove);
+                        List<Vector3> tempMoves = new List<Vector3>(); // This is used to track the piece being pinned (this) and the path 
+                        tempMoves.Add(startingPos); //adds the position of the piece to the list.
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesB++;
+                            tempMoves.Add(tempMove);
+                            lightList.Add(tempMove);
+                            tempMove -= dir;
+                        }
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                    Vector3 tmp = tempMove;
+                                    for (int i = 0; tmp != selectedPiece.transform.localPosition; i++)
+                                    {
+                                        tmp += dir;
+                                        if (tmp != selectedPiece.transform.localPosition)
+                                        {
+                                            lineOfCheck.Add(tmp);
+                                        }
+                                    }
+                                }
+
+                                else
+                                {
+                                    numberOfPossibleMovesB++;
+                                    lightList.Add(tempMove);
+                                    pinnedPiece = tempMove;
+                                    pieceFound = true;
+                                }
+                            }
+
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pBPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove -= dir;
+                            //Checks for if the piece before is pinned
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove -= dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove) && !pinnedPiecePath.ContainsKey(pinnedPiece) && !pinnedPiecePath.ContainsValue(tempMoves))
+                            {
+                                if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) // Movement limited to moving along the rank of the line of sight of the piece pinning or take the pinning piece
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    //Move Along the Pinned Rank
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        //Regular movement with no pieces in the way
+                        if (pinnedPiecePath.ContainsKey(startingPos))
+                        {
+                            while (pinnedPiecePath[startingPos].Contains(tempMove))
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                                tempMove += dir;
+                            }
+                        }
+                    }
+
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //Move Along the Pinned Rank
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        //Regular movement with no pieces in the way
+                        if (pinnedPiecePath.ContainsKey(startingPos))
+                        {
+                            while (pinnedPiecePath[startingPos].Contains(tempMove))
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                                tempMove -= dir;
+                            }
+                        }
+                    }
+
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+                }
+            }
         }
+
     }
 
     void KingMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, int numOfMovesW, int numOfMovesB)
     {
-        Vector3 temp = selectedPiece.transform.localPosition;
+        Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
         Vector3[] directions = new Vector3[8];
         directions[0] = new Vector3(-1.25f, 0, -1.25f); //down left
@@ -386,7 +814,7 @@ public class Chessboard : MonoBehaviour
 
         foreach (Vector3 dir in directions)
         {
-            tempMove = temp;
+            tempMove = startingPos;
             tempMove += dir;
 
             if (selectedPiece.tag == "White")
@@ -422,7 +850,7 @@ public class Chessboard : MonoBehaviour
 
                 if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedWhitePieces.Contains(tempMove)) //checks to see if there is a piece in the moveable space
                 {
-                    if (piecePosition[tempMove].tag == "White" && !UIEngineReference.whitePossiblePositions.Contains(tempMove))
+                    if (piecePosition[tempMove].tag == "White")
                     {
                         numOfMovesB++;
                         lightList.Add(tempMove);
@@ -439,63 +867,466 @@ public class Chessboard : MonoBehaviour
 
     void BishopMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
-        Vector3 temp = selectedPiece.transform.localPosition;
+        bool pieceFound = false;
+        Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3[] directions = new Vector3[4];
         directions[0] = new Vector3(1.25f, 0, 1.25f); //moveUpRight
         directions[1] = new Vector3(-1.25f, 0, 1.25f); //moveUpLeft
         directions[2] = new Vector3(1.25f, 0, -1.25f); //moveDownRight
         directions[3] = new Vector3(-1.25f, 0, -1.25f); //moveDownLeft
-        Vector3 tempMove = temp;
-        if (selectedPiece.tag == "White")
-        {
-            foreach (Vector3 dir in directions)
-            {
-                tempMove = temp;
-                tempMove += dir;
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
-                {
-                    lightList.Add(tempMove);
-                    tempMove += dir;
-                }
+        Vector3 tempMove;
 
-                if (piecePosition.ContainsKey(tempMove))
+        if (check == true)
+        {
+            if (selectedPiece.GetComponent<Track>().pinned == false) //Can block the check or take the piece checking 
+            {
+                if (selectedPiece.tag == "White")
                 {
-                    if (piecePosition[tempMove].tag == "Black")
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
                     {
-                        lightList.Add(tempMove);
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos); // adds the orignal piece
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            tempMoves.Add(tempMove);
+                            tempMove += dir;
+                        }
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pinnedPiece = tempMove;
+                                pieceFound = true;
+                            }
+
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove += dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove += dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                if (piecePosition[tempMove].tag == "Black" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
                     }
 
-                    if (piecePosition[tempMove].tag == "White")
+                    //CHECK FOR BLOCK OR TAKE
+                    foreach (Vector3 dir in directions)
                     {
-                        pWPieces.Add(tempMove);
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                            }
+                            tempMove += dir;
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
+                    {
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos); // adds the orignal piece
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesB++;
+                            tempMoves.Add(tempMove);
+                            tempMove -= dir;
+                        }
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pinnedPiece = tempMove;
+                                pieceFound = true;
+                            }
+
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove -= dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove -= dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
+                    }
+
+                    //CHECK FOR BLOCK OR TAKE
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                            }
+                            tempMove -= dir;
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
+                    }
+
+                }
+            }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) //Movement cannot be made
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
+                    {
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos); // adds the orignal piece
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            tempMoves.Add(tempMove);
+                            tempMove += dir;
+                        }
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pinnedPiece = tempMove;
+                                pieceFound = true;
+                            }
+
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove += dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove += dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                if (piecePosition[tempMove].tag == "Black" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
+                    {
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos); // adds the orignal piece
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            tempMoves.Add(tempMove);
+                            tempMove -= dir;
+                        }
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pinnedPiece = tempMove;
+                                pieceFound = true;
+                            }
+
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove -= dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove -= dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (selectedPiece.tag == "Black")
+        if (check == false)
         {
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == false) // Normal movement
             {
-                tempMove = temp;
-                tempMove -= dir;
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    lightList.Add(tempMove);
-                    tempMove -= dir;
+                    foreach (Vector3 dir in directions)
+                    {
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos);
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                            tempMoves.Add(tempMove);
+                            tempMove += dir;
+                        }
+
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                    Vector3 tmp = tempMove;
+                                    for (int i = 0; tmp != startingPos; i++)
+                                    {
+                                        tmp -= dir;
+                                        if (tmp != selectedPiece.transform.localPosition)
+                                        {
+                                            lineOfCheck.Add(tmp);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    numberOfPossibleMovesW++;
+                                    lightList.Add(tempMove);
+                                    pinnedPiece = tempMove;
+                                    pieceFound = true;
+                                }
+                            }
+
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove += dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove += dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove) && !pinnedPiecePath.ContainsKey(pinnedPiece) && !pinnedPiecePath.ContainsValue(tempMoves))
+                            {
+                                if (piecePosition[tempMove].tag == "Black" && piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
+                    }
                 }
 
-                if (piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "Black")
                 {
-                    if (piecePosition[tempMove].tag == "White")
+                    foreach (Vector3 dir in directions)
                     {
-                        lightList.Add(tempMove);
+                        List<Vector3> tempMoves = new List<Vector3>();
+                        tempMoves.Add(startingPos);
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesB++;
+                            tempMoves.Add(tempMove);
+                            lightList.Add(tempMove);
+                            tempMove -= dir;
+                        }
+
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                    Vector3 tmp = tempMove;
+                                    for (int i = 0; tmp != startingPos; i++)
+                                    {
+                                        tmp += dir;
+                                        if (tmp != selectedPiece.transform.localPosition)
+                                        {
+                                            lineOfCheck.Add(tmp);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    numberOfPossibleMovesB++;
+                                    lightList.Add(tempMove);
+                                    pinnedPiece = tempMove;
+                                    pieceFound = true;
+                                }
+                            }
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pBPieces.Add(tempMove);
+                            }
+                        }
+
+                        if (pieceFound == true)
+                        {
+                            tempMove -= dir;
+                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            {
+                                tempMoves.Add(tempMove);
+                                tempMove -= dir;
+                            }
+
+                            if (piecePosition.ContainsKey(tempMove) && !pinnedPiecePath.ContainsKey(pinnedPiece) && !pinnedPiecePath.ContainsValue(tempMoves))
+                            {
+                                if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    Debug.Log("Accessed");
+                                    piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                                    pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) //can only move in the path of the piece pinning or take the piece.
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    //Move Along the Pinned Rank
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        //Regular movement with no pieces in the way
+                        if (pinnedPiecePath.ContainsKey(startingPos))
+                        {
+                            while (pinnedPiecePath[startingPos].Contains(tempMove))
+                            {
+                                numberOfPossibleMovesW++;
+                                lightList.Add(tempMove);
+                                tempMove += dir;
+                            }
+                        }
                     }
 
-                    if (piecePosition[tempMove].tag == "Black")
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //Move Along the Pinned Rank
+                    foreach (Vector3 dir in directions)
                     {
-                        pBPieces.Add(tempMove);
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        //Regular movement with no pieces in the way
+                        if (pinnedPiecePath.ContainsKey(startingPos))
+                        {
+                            while (pinnedPiecePath[startingPos].Contains(tempMove))
+                            {
+                                numberOfPossibleMovesB++;
+                                lightList.Add(tempMove);
+                                tempMove -= dir;
+                            }
+                        }
                     }
+
+                    //CHECK FOR PIN + PROTECTED PIECES
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
             }
         }
@@ -503,7 +1334,7 @@ public class Chessboard : MonoBehaviour
 
     void KnightMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
-        Vector3 temp = selectedPiece.transform.localPosition;
+        Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
         Vector3[] directions = new Vector3[8];
         directions[0] = new Vector3(-1.25f, 0, -2.5f); // Down Down left
@@ -515,53 +1346,214 @@ public class Chessboard : MonoBehaviour
         directions[6] = new Vector3(-2.5f, 0, 1.25f); // Left Left Up
         directions[7] = new Vector3(-2.5f, 0, -1.25f); // Left Left Down
 
-        if (selectedPiece.tag == "White")
+        if (check == false)
         {
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == false) //Normal movement
             {
-                tempMove = temp;
-                tempMove += dir;
-                if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    lightList.Add(tempMove);
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove += dir;
+                        if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+
+                        else if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                }
+
+                                else
+                                {
+                                    numberOfPossibleMovesW++;
+                                    lightList.Add(tempMove);
+                                }
+                            }
+
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+                    }
                 }
 
-                else if (piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "Black")
                 {
-                    if (piecePosition[tempMove].tag == "Black")
+                    foreach (Vector3 dir in directions)
                     {
-                        lightList.Add(tempMove);
-                    }
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
 
-                    if (piecePosition[tempMove].tag == "White")
+                        else if (piecePosition.ContainsKey(tempMove))
+                        {
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
+                                {
+                                    piecesPuttingKingInCheck += 1;
+                                    piecesChecking.Add(tempMove);
+                                }
+
+                                else
+                                {
+                                    numberOfPossibleMovesB++;
+                                    lightList.Add(tempMove);
+                                }
+                            }
+
+
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pBPieces.Add(tempMove);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) // Can't move
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    //PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
                     {
-                        pWPieces.Add(tempMove);
+                        tempMove = startingPos;
+                        tempMove += dir;
+
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (selectedPiece.tag == "Black")
+        if (check == true)
         {
-            foreach (Vector3 dir in directions)
+            if (selectedPiece.GetComponent<Track>().pinned == false)
             {
-                tempMove = temp;
-                tempMove -= dir;
-                if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    lightList.Add(tempMove);
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove += dir;
+
+                        if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesW++;
+                            lightList.Add(tempMove);
+                        }
+                    }
                 }
 
-                else if (piecePosition.ContainsKey(tempMove))
+                if (selectedPiece.tag == "Black")
                 {
-                    if (piecePosition[tempMove].tag == "White")
+                    foreach (Vector3 dir in directions)
                     {
-                        lightList.Add(tempMove);
-                    }
+                        tempMove = startingPos;
+                        tempMove -= dir;
 
-                    if (piecePosition[tempMove].tag == "Black")
+                        if (lineOfCheck.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
+
+                        if (piecesChecking.Contains(tempMove))
+                        {
+                            numberOfPossibleMovesB++;
+                            lightList.Add(tempMove);
+                        }
+                    }
+                }
+            }
+
+            if (selectedPiece.GetComponent<Track>().pinned == true) // Can't move
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    // PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
                     {
-                        pBPieces.Add(tempMove);
+                        tempMove = startingPos;
+                        tempMove += dir;
+
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "White")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    //PROTECTED PIECES
+                    foreach (Vector3 dir in directions)
+                    {
+                        tempMove = startingPos;
+                        tempMove -= dir;
+                        // checks if the next space has a takeable piece on it
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            //Protected Piece
+                            if (piecePosition[tempMove].tag == "Black")
+                            {
+                                pWPieces.Add(tempMove);
+                            }
+                        }
                     }
                 }
             }
@@ -574,24 +1566,128 @@ public class Chessboard : MonoBehaviour
         BishopMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
     }
 
-    /*
-    public void CheckBoard(ref List<Vector3> WPP, ref List<Vector3> BPP)
+    public void CheckMateCheck(int nOMW, int nOMB)
     {
-        BPP.Clear();
-        WPP.Clear();
-        foreach (Transform inPlayPieces in chessBoard.transform)
+        if (whiteToMove)
         {
-            if (inPlayPieces.tag == "White")
+            if (numberOfPossibleMovesW == 0)
             {
-                WPP.Add(inPlayPieces.transform.localPosition);
+                checkMate = true;
             }
-
-            if (inPlayPieces.tag == "Black")
+        }
+        else
+        {
+            if (numberOfPossibleMovesB == 0)
             {
-                BPP.Add(inPlayPieces.transform.localPosition);
+                checkMate = true;
+            }
+        }
+
+    }
+
+    void CheckPinAndProtectedPieces(GameObject selectedPiece, Vector3[] directions, Vector3 startingPos, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
+    {
+        bool pieceFound = false;
+        if (selectedPiece.tag == "White")
+        {
+            foreach (Vector3 dir in directions)
+            {
+                List<Vector3> tempMoves = new List<Vector3>();
+                tempMoves.Add(startingPos); // adds the orignal piece
+                Vector3 tempMove = startingPos;
+                tempMove += dir;
+                //regular movement with no pieces in the way
+                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                {
+                    tempMoves.Add(tempMove);
+                    tempMove += dir;
+                }
+                // checks if the next space has a takeable piece on it
+                if (piecePosition.ContainsKey(tempMove))
+                {
+                    if (piecePosition[tempMove].tag == "Black")
+                    {
+                        pinnedPiece = tempMove;
+                        pieceFound = true;
+                    }
+
+                    //Protected Piece
+                    if (piecePosition[tempMove].tag == "White")
+                    {
+                        pWPieces.Add(tempMove);
+                    }
+                }
+
+                if (pieceFound == true)
+                {
+                    tempMove += dir;
+                    while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    {
+                        tempMoves.Add(tempMove);
+                        tempMove += dir;
+                    }
+
+                    if (piecePosition.ContainsKey(tempMove) && !pinnedPiecePath.ContainsKey(pinnedPiece) && !pinnedPiecePath.ContainsValue(tempMoves))
+                    {
+                        if (piecePosition[tempMove].tag == "Black" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                        {
+                            piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                            pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (selectedPiece.tag == "Black")
+        {
+            foreach (Vector3 dir in directions)
+            {
+                List<Vector3> tempMoves = new List<Vector3>();
+                tempMoves.Add(startingPos); // adds the orignal piece
+                Vector3 tempMove = startingPos;
+                tempMove -= dir;
+                //regular movement with no pieces in the way
+                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                {
+                    tempMoves.Add(tempMove);
+                    tempMove -= dir;
+                }
+                // checks if the next space has a takeable piece on it
+                if (piecePosition.ContainsKey(tempMove))
+                {
+                    if (piecePosition[tempMove].tag == "White")
+                    {
+                        pinnedPiece = tempMove;
+                        pieceFound = true;
+                    }
+
+                    //Protected Piece
+                    if (piecePosition[tempMove].tag == "Black")
+                    {
+                        pWPieces.Add(tempMove);
+                    }
+                }
+
+                if (pieceFound == true)
+                {
+                    tempMove -= dir;
+                    while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    {
+                        tempMoves.Add(tempMove);
+                        tempMove -= dir;
+                    }
+
+                    if (piecePosition.ContainsKey(tempMove))
+                    {
+                        if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King") // checks if the next piece is the opponents king
+                        {
+                            piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
+                            pinnedPiecePath.Add(pinnedPiece, tempMoves);
+                        }
+                    }
+                }
             }
         }
     }
-    */
-
 }

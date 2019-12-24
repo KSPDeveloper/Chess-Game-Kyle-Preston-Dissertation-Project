@@ -643,8 +643,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1199316341}
-  - component: {fileID: 1199316340}
   - component: {fileID: 1199316342}
+  - component: {fileID: 1199316340}
   m_Layer: 0
   m_Name: Game Controller
   m_TagString: Untagged
@@ -661,11 +661,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1199316339}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b9f3b9f99933f4459409e744458a48a, type: 3}
+  m_Script: {fileID: 11500000, guid: 6fc7031f201363843af9900d70d766ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  checkMate: 0
+  numberOfPossibleMovesB: 0
+  numberOfPossibleMovesW: 0
   UIEngineReference: {fileID: 0}
   whiteToMove: 1
+  check: 0
   white: {fileID: 2100000, guid: d09888fb380864d7d820ffed5c260deb, type: 2}
   black: {fileID: 2100000, guid: ce80d7520e4604c6faaad086dc1a7590, type: 2}
   Pawn: {fileID: 6666886775309104841, guid: f82c90c897ffde44dbcb15e23f305a66, type: 3}
@@ -678,6 +682,9 @@ MonoBehaviour:
   startingPosition: 1
   whiteSpaces: []
   blackSpaces: []
+  lineOfCheck: []
+  piecesChecking: []
+  pinnedPieces: []
   pieces:
   - {fileID: 0}
   - {fileID: 0}
@@ -711,6 +718,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  pinnedPiece: {x: 0, y: 0, z: 0}
+  piecesPuttingKingInCheck: 0
 --- !u!4 &1199316341
 Transform:
   m_ObjectHideFlags: 0
