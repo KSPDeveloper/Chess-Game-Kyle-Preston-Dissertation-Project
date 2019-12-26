@@ -47,8 +47,6 @@ public class UIEngine : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            //DestroyLights();
-            //lightList.Clear();
             RaycastHit hitInfo = new RaycastHit();
             bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity);
             if (hit)
@@ -393,56 +391,71 @@ public class UIEngine : MonoBehaviour
         WPosP.Clear();
         BPosP.Clear();
 
+        Dictionary<Vector3, GameObject> tempWhiteList = new Dictionary<Vector3, GameObject>();
+        Dictionary<Vector3, GameObject> tempBlackList = new Dictionary<Vector3, GameObject>();
+
         //Un-pin all pieces to be calculated if they are pinned
         foreach (KeyValuePair<Vector3, GameObject> pPos in ChessboardRef.piecePosition)
         {
             pPos.Value.GetComponent<Track>().pinned = false;
         }
 
+        //Temporarily seperates the chess pieces by their colour//
         foreach (KeyValuePair<Vector3, GameObject> pPos in ChessboardRef.piecePosition)
         {
-            if (!pPos.Value.transform.GetChild(0).tag.Contains("King")) //Ensures the kings moves are not added to the list
+            if (pPos.Value.tag == "White")
             {
-                if (pPos.Value.tag == "White")
-                {
-                    ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
-                    /*
-                    if (!pPos.Value.transform.GetChild(0).tag.Contains("Pawn"))
-                    {
-                        ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
-                    }
-                    else
-                    { 
-                        ChessboardRef.PawnTakePositions(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
-                    }
-                    */
-                }
+                tempWhiteList.Add(pPos.Key, pPos.Value);
+            }
 
-                if (pPos.Value.tag == "Black")
-                {
-                    ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
-                    /*
-                    if (!pPos.Value.transform.GetChild(0).tag.Contains("Pawn"))
-                    {
-                        ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
-                    }
-                    
-                    else
-                    {
-                        ChessboardRef.PawnTakePositions(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
-                    }
-                    */
-                }
+            if (pPos.Value.tag == "Black")
+            {
+                tempBlackList.Add(pPos.Key, pPos.Value);
             }
         }
 
+        //If white to move, calcualte blacks moves first for chance of check.
+        if (ChessboardRef.whiteToMove)
+        {
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
+            {
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
+            }
+
+            if (ChessboardRef.piecesPuttingKingInCheck > 0)
+            {
+                ChessboardRef.check = true;
+            }
+
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
+            {
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
+            }
+        }
+
+        else if (!ChessboardRef.whiteToMove)
+        {
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
+            {
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
+            }
+
+            if (ChessboardRef.piecesPuttingKingInCheck > 0)
+            {
+                ChessboardRef.check = true;
+            }
+
+
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
+            {
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
+            }
+        }
+        
         Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
         Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
 
-        if (ChessboardRef.piecesPuttingKingInCheck > 0)
-        {
-            ChessboardRef.check = true;
-        }
+        
     }
 
     void highlightPossibleMoves(List<Vector3> lightlist)

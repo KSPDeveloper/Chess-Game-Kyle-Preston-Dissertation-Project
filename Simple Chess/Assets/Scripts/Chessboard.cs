@@ -213,7 +213,7 @@ public class Chessboard : MonoBehaviour
                             {
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     piecesPuttingKingInCheck += 1;
                                 }
 
@@ -236,6 +236,7 @@ public class Chessboard : MonoBehaviour
                     {
                         lightList.Add(tempMove);
                         numberOfPossibleMovesB++;
+                        Debug.Log("Accessed");
                     }
 
                     //Used only for when the pawn has not moved from its stating position
@@ -251,6 +252,7 @@ public class Chessboard : MonoBehaviour
                             {
                                 lightList.Add(tempMove);
                                 numberOfPossibleMovesB++;
+                                Debug.Log("Accessed");
                             }
                         }
                     }
@@ -267,13 +269,14 @@ public class Chessboard : MonoBehaviour
                             {
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     piecesPuttingKingInCheck += 1;
                                 }
                                 else
                                 {
                                     lightList.Add(tempMove);
                                     numberOfPossibleMovesB++;
+                                    Debug.Log("Accessed");
                                 }
                             }
                         }
@@ -329,6 +332,7 @@ public class Chessboard : MonoBehaviour
                     if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
                     {
                         numberOfPossibleMovesB++;
+                        Debug.Log("Accessed");
                         lightList.Add(tempMove);
                     }
 
@@ -342,6 +346,7 @@ public class Chessboard : MonoBehaviour
                             tempMove -= moveForward;
                             if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -355,6 +360,7 @@ public class Chessboard : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -371,7 +377,7 @@ public class Chessboard : MonoBehaviour
                 {
                     //Move forward one
                     tempMove = startingPos + moveForward;
-                    if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                    if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
                         lightList.Add(tempMove);
                         numberOfPossibleMovesW++;
@@ -385,7 +391,7 @@ public class Chessboard : MonoBehaviour
                         if (!piecePosition.ContainsKey(tempMove))
                         {
                             tempMove += moveForward;
-                            if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
                                 numberOfPossibleMovesW++;
                                 lightList.Add(tempMove);
@@ -409,8 +415,9 @@ public class Chessboard : MonoBehaviour
                 {
                     //Move forward one
                     tempMove = startingPos - moveForward;
-                    if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                    if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
+                        Debug.Log("Accessed");
                         numberOfPossibleMovesB++;
                         lightList.Add(tempMove);
                     }
@@ -423,8 +430,9 @@ public class Chessboard : MonoBehaviour
                         if (!piecePosition.ContainsKey(tempMove))
                         {
                             tempMove += moveForward;
-                            if (lineOfCheck.Contains(tempMove) || piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                            if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -437,6 +445,7 @@ public class Chessboard : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -492,6 +501,7 @@ public class Chessboard : MonoBehaviour
                 tempMove -= moveForward - dir; // gets forward one, right / left one position
                 if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                 {
+                    Debug.Log("Accessed");
                     numberOfPossibleMovesB++;
                     lightList.Add(tempMove);
                 }
@@ -510,8 +520,6 @@ public class Chessboard : MonoBehaviour
 
     void RookMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
-        int wPossibleMoves = 0;
-        int bPossibleMoves = 0;
         bool pieceFound = false;
         Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
@@ -535,7 +543,8 @@ public class Chessboard : MonoBehaviour
                     {
                         tempMove = startingPos;
                         tempMove += dir;
-                        //regular movement with no pieces in the way
+
+                        //Regular movement with no pieces in the way
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
@@ -568,6 +577,7 @@ public class Chessboard : MonoBehaviour
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -576,6 +586,7 @@ public class Chessboard : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -614,6 +625,7 @@ public class Chessboard : MonoBehaviour
                         //regular movement with no pieces in the way
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
+                            
                             numberOfPossibleMovesW++;
                             lightList.Add(tempMove);
                             tempMoves.Add(tempMove);
@@ -627,7 +639,7 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     Vector3 tmp = tempMove;
                                     for (int i = 0; tmp != selectedPiece.transform.localPosition; i++)
                                     {
@@ -684,6 +696,7 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
@@ -696,7 +709,7 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     Vector3 tmp = tempMove;
                                     for (int i = 0; tmp != selectedPiece.transform.localPosition; i++)
                                     {
@@ -710,6 +723,7 @@ public class Chessboard : MonoBehaviour
 
                                 else
                                 {
+                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
@@ -783,6 +797,7 @@ public class Chessboard : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
@@ -817,48 +832,94 @@ public class Chessboard : MonoBehaviour
             tempMove = startingPos;
             tempMove += dir;
 
-            if (selectedPiece.tag == "White")
+            if (check == false)
             {
-                if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.blackPossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "White")
                 {
-                    numOfMovesW++;
-                    lightList.Add(tempMove);
-                }
-
-                if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedBlackPieces.Contains(tempMove)) //checks to see if there is a piece in the moveable space
-                {
-                    if (piecePosition[tempMove].tag == "Black")
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.blackPossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
                         numOfMovesW++;
                         lightList.Add(tempMove);
                     }
 
-                    if (piecePosition[tempMove].tag == "White")
+                    if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedBlackPieces.Contains(tempMove)) //checks to see if there is a piece in the moveable space
                     {
-                        pWPieces.Add(tempMove);
+                        if (piecePosition[tempMove].tag == "Black")
+                        {
+                            numOfMovesW++;
+                            lightList.Add(tempMove);
+                        }
+
+                        if (piecePosition[tempMove].tag == "White")
+                        {
+                            pWPieces.Add(tempMove);
+                        }
                     }
                 }
-            }
 
-            if (selectedPiece.tag == "Black")
-            {
-                if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.whitePossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                if (selectedPiece.tag == "Black")
                 {
-                    numOfMovesB++;
-                    lightList.Add(tempMove);
-                }
-
-                if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedWhitePieces.Contains(tempMove)) //checks to see if there is a piece in the moveable space
-                {
-                    if (piecePosition[tempMove].tag == "White")
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.whitePossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
+                        Debug.Log("Accessed");
                         numOfMovesB++;
                         lightList.Add(tempMove);
                     }
 
-                    if (piecePosition[tempMove].tag == "Black")
+                    if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedWhitePieces.Contains(tempMove)) //checks to see if there is a piece in the moveable space
                     {
-                        pBPieces.Add(tempMove);
+                        if (piecePosition[tempMove].tag == "White")
+                        {
+                            Debug.Log("Accessed");
+                            numOfMovesB++;
+                            lightList.Add(tempMove);
+                        }
+
+                        if (piecePosition[tempMove].tag == "Black")
+                        {
+                            pBPieces.Add(tempMove);
+                        }
+                    }
+                }
+            }
+
+            if (check == true)
+            {
+                if (selectedPiece.tag == "White")
+                {
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.blackPossiblePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    {
+                        numOfMovesW++;
+                        lightList.Add(tempMove);
+                    }
+
+                    if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedBlackPieces.Contains(tempMove))
+                    {
+                        if (piecePosition[tempMove].tag == "Black")
+                        {
+                            numOfMovesW++;
+                            lightList.Add(tempMove);
+                        }
+                    }
+                }
+
+                if (selectedPiece.tag == "Black")
+                {
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.whitePossiblePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    {
+                        numOfMovesB++;
+                        lightList.Add(tempMove);
+                        Debug.Log("Accessed");
+                    }
+
+                    if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedWhitePieces.Contains(tempMove))
+                    {
+                        if (piecePosition[tempMove].tag == "White")
+                        {
+                            numOfMovesB++;
+                            lightList.Add(tempMove);
+                            Debug.Log("Accessed");
+                        }
                     }
                 }
             }
@@ -965,7 +1026,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
-                            numberOfPossibleMovesB++;
                             tempMoves.Add(tempMove);
                             tempMove -= dir;
                         }
@@ -1014,6 +1074,7 @@ public class Chessboard : MonoBehaviour
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -1022,6 +1083,7 @@ public class Chessboard : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -1163,7 +1225,7 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     Vector3 tmp = tempMove;
                                     for (int i = 0; tmp != startingPos; i++)
                                     {
@@ -1220,6 +1282,7 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
@@ -1233,7 +1296,7 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                     Vector3 tmp = tempMove;
                                     for (int i = 0; tmp != startingPos; i++)
                                     {
@@ -1246,6 +1309,7 @@ public class Chessboard : MonoBehaviour
                                 }
                                 else
                                 {
+                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
@@ -1271,7 +1335,6 @@ public class Chessboard : MonoBehaviour
                             {
                                 if (piecePosition[tempMove].tag == "White" && piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
-                                    Debug.Log("Accessed");
                                     piecePosition[pinnedPiece].GetComponent<Track>().pinned = true;
                                     pinnedPiecePath.Add(pinnedPiece, tempMoves);
                                 }
@@ -1318,6 +1381,7 @@ public class Chessboard : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
+                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
@@ -1369,7 +1433,7 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                 }
 
                                 else
@@ -1395,6 +1459,7 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -1406,11 +1471,12 @@ public class Chessboard : MonoBehaviour
                                 if (piecePosition[tempMove].transform.GetChild(0).tag == "King")
                                 {
                                     piecesPuttingKingInCheck += 1;
-                                    piecesChecking.Add(tempMove);
+                                    piecesChecking.Add(startingPos);
                                 }
 
                                 else
                                 {
+                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                 }
@@ -1503,12 +1569,14 @@ public class Chessboard : MonoBehaviour
 
                         if (lineOfCheck.Contains(tempMove))
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
 
                         if (piecesChecking.Contains(tempMove))
                         {
+                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
