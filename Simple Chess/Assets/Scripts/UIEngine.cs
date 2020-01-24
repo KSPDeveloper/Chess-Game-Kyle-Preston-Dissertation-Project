@@ -4,6 +4,9 @@ using UnityEngine;
 using TMPro;
 public class UIEngine : MonoBehaviour
 {
+    public Camera transitionCamera;
+    public bool cameraFocusWhite = true;
+    bool isCameraMoving = false;
     public TextMeshProUGUI playerTurn;
     public GameObject selectedPiece;
     public GameObject lightPrefab, board, whiteGraveyard, blackGraveyard;
@@ -45,303 +48,184 @@ public class UIEngine : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (isCameraMoving == false)
         {
-            RaycastHit hitInfo = new RaycastHit();
-            bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity);
-            if (hit)
+            if (Input.GetMouseButtonDown(0))
             {
-                if (hitInfo.transform.tag == "Move")
+                RaycastHit hitInfo = new RaycastHit();
+                bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity);
+                if (hit)
                 {
-                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                    if (hitInfo.transform.tag == "Move")
                     {
-                        selectedPiece.GetComponent<Track>().startingPosition = false;
-                    }
-                    ChessboardRef.check = false; // Resets Check
-                    ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
-                    TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
-                    ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
-                    selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
-                    selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
-                    ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                    AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
-                    ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
-                    UpdateUI();
-                    DestroyLights();
-                    lightList.Clear();
-                }
-
-                else if (hitInfo.transform.gameObject.tag == "White")
-                {
-                    //White to move
-                    if (ChessboardRef.whiteToMove)
-                    {
-                        if (selectedPiece == hitInfo.transform.gameObject)
+                        if (selectedPiece.GetComponent<Track>().startingPosition == true)
                         {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = null;
+                            selectedPiece.GetComponent<Track>().startingPosition = false;
                         }
-
-                        else
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = hitInfo.transform.gameObject;
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
-                            {
-                                highlightPossibleMoves(lightList);
-                            }
-                        }
-                    }
-
-                    //Black to move
-                    else
-                    {
-                        if (lightList.Count > 0)
-                        {
-                            if (lightList.Contains(hitInfo.transform.localPosition))
-                            {
-                                if (selectedPiece.GetComponent<Track>().startingPosition == true)
-                                {
-                                    selectedPiece.GetComponent<Track>().startingPosition = false;
-                                }
-                                ChessboardRef.check = false; // Resets Check
-                                ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
-                                TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
-                                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
-                                selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
-                                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
-                                ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
-                                UpdateUI();
-                                DestroyLights();
-                                lightList.Clear();
-                            }
-                        }
-                    }
-                }
-
-                else if (hitInfo.transform.gameObject.tag == "Black")
-                {
-                    //White to move
-                    if (ChessboardRef.whiteToMove)
-                    {
-                        if (lightList.Count > 0)
-                        {
-                            if (lightList.Contains(hitInfo.transform.localPosition))
-                            {
-                                if (selectedPiece.GetComponent<Track>().startingPosition == true)
-                                {
-                                    selectedPiece.GetComponent<Track>().startingPosition = false;
-                                }
-                                ChessboardRef.check = false; // Resets Check
-                                ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
-                                TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
-                                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
-                                selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
-                                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
-                                ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
-                                UpdateUI();
-                                DestroyLights();
-                                lightList.Clear();
-                            }
-                        }
-                    }
-
-                    //Black to move
-                    else
-                    {
-                        if (selectedPiece == hitInfo.transform.gameObject)
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = null;
-                        }
-
-                        else
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = hitInfo.transform.gameObject;
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
-                            {
-                                highlightPossibleMoves(lightList);
-                            }
-                        }
-                    }
-                }
-
-                else
-                {
-                    DestroyLights();
-                    lightList.Clear();
-                    selectedPiece = null;
-                }
-                /*
-
-                //WHITE TO MOVE
-                else if (ChessboardRef.whiteToMove)
-                {
-                    if (hitInfo.transform.gameObject.tag == "White")
-                    {
-                        if (selectedPiece == hitInfo.transform.gameObject)
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = null;
-                        }
-
-                        else
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = hitInfo.transform.gameObject;
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
-                            {
-                                highlightPossibleMoves(lightList);
-                            }
-                        }
-                    }
-
-                    else if (hitInfo.transform.tag == "Black" && lightList.Count > 0)
-                    {
-                        if (lightList.Contains(hitInfo.transform.localPosition))
-                        {
-                            if (selectedPiece.GetComponent<Track>().startingPosition == true)
-                            {
-                                selectedPiece.GetComponent<Track>().startingPosition = false;
-                            }
-                            ChessboardRef.check = false; // Resets Check
-                            ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
-                            TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
-                            ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
-                            selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
-                            ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
-                            ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
-                            UpdateUI();
-                            DestroyLights();
-                            lightList.Clear();
-                        }
-                    }
-
-                    else
-                    {
+                        ChessboardRef.check = false; // Resets Check
+                        ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
+                        TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
+                        ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
+                        selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
+                        selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
+                        ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
+                        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                        ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+                        StartCoroutine(AnimateCamera());
+                        UpdateUI();
                         DestroyLights();
                         lightList.Clear();
-                        selectedPiece = null;
-                    }
-                }
-
-                /*
-                //BLACK TO MOVE
-                else if (!ChessboardRef.whiteToMove)
-                {
-
-                    if (hitInfo.transform.gameObject.tag == "Black")
-                    {
-                        if (selectedPiece == hitInfo.transform.gameObject)
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = null;
-                        }
-
-                        else
-                        {
-                            DestroyLights();
-                            lightList.Clear();
-                            selectedPiece = hitInfo.transform.gameObject;
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
-                            {
-                                highlightPossibleMoves(lightList);
-                            }
-                        }
                     }
 
-                    else if (hitInfo.transform.tag == "White" && lightList.Count > 0)
+                    else if (hitInfo.transform.gameObject.tag == "White")
                     {
-                        if (lightList.Contains(hitInfo.transform.localPosition))
-                        {
-                            if (selectedPiece.GetComponent<Track>().startingPosition == true)
-                            {
-                                selectedPiece.GetComponent<Track>().startingPosition = false;
-                            }
-                            ChessboardRef.check = false; // Resets Check
-                            ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
-                            TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
-                            ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
-                            selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
-                            ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
-                            ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
-                            UpdateUI();
-                            DestroyLights();
-                            lightList.Clear();
-                        }
-                    }
-
-                    else
-                    {
-                        DestroyLights();
-                        lightList.Clear();
-                        selectedPiece = null;
-                    }
-                }
-                //if a piece is selected, preform the move function//
-                
-                /*
-                //White
-                else if (hitInfo.transform.gameObject.tag == "White")
-                {
-                    if (selectedPiece == hitInfo.transform.gameObject)
-                    {
-                        selectedPiece = null;
-                    }
-                    else
-                    {
-                        selectedPiece = hitInfo.transform.gameObject;
+                        //White to move
                         if (ChessboardRef.whiteToMove)
                         {
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
+                            if (selectedPiece == hitInfo.transform.gameObject)
                             {
-                                highlightPossibleMoves(lightList);
+                                DestroyLights();
+                                lightList.Clear();
+                                selectedPiece = null;
+                            }
+
+                            else
+                            {
+                                DestroyLights();
+                                lightList.Clear();
+                                selectedPiece = hitInfo.transform.gameObject;
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
+                                if (lightList.Count != 0)
+                                {
+                                    highlightPossibleMoves(lightList);
+                                }
                             }
                         }
-                    }  
-                }
-                */
-                /*
-                //Black
-                else if (hitInfo.transform.gameObject.tag == "Black")
-                {
-                    if (selectedPiece == hitInfo.transform.gameObject)
-                    {
-                        selectedPiece = null;
+
+                        //Black to move
+                        else
+                        {
+                            if (lightList.Count > 0)
+                            {
+                                if (lightList.Contains(hitInfo.transform.localPosition))
+                                {
+                                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                                    {
+                                        selectedPiece.GetComponent<Track>().startingPosition = false;
+                                    }
+                                    ChessboardRef.check = false; // Resets Check
+                                    ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
+                                    TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
+                                    ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
+                                    selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
+                                    ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
+                                    AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                    ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+                                    StartCoroutine(AnimateCamera());
+                                    UpdateUI();
+                                    DestroyLights();
+                                    lightList.Clear();
+                                }
+                            }
+                        }
                     }
+
+                    else if (hitInfo.transform.gameObject.tag == "Black")
+                    {
+                        //White to move
+                        if (ChessboardRef.whiteToMove)
+                        {
+                            if (lightList.Count > 0)
+                            {
+                                if (lightList.Contains(hitInfo.transform.localPosition))
+                                {
+                                    if (selectedPiece.GetComponent<Track>().startingPosition == true)
+                                    {
+                                        selectedPiece.GetComponent<Track>().startingPosition = false;
+                                    }
+                                    ChessboardRef.check = false; // Resets Check
+                                    ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
+                                    TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
+                                    ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old position + gameobject to the dictionary
+                                    selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
+                                    ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
+                                    AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                    ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+                                    StartCoroutine(AnimateCamera());
+                                    UpdateUI();
+                                    DestroyLights();
+                                    lightList.Clear();
+                                }
+                            }
+                        }
+
+                        //Black to move
+                        else
+                        {
+                            if (selectedPiece == hitInfo.transform.gameObject)
+                            {
+                                DestroyLights();
+                                lightList.Clear();
+                                selectedPiece = null;
+                            }
+
+                            else
+                            {
+                                DestroyLights();
+                                lightList.Clear();
+                                selectedPiece = hitInfo.transform.gameObject;
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
+                                if (lightList.Count != 0)
+                                {
+                                    highlightPossibleMoves(lightList);
+                                }
+                            }
+                        }
+                    }
+
                     else
                     {
-                        selectedPiece = hitInfo.transform.gameObject;
-                        if (!ChessboardRef.whiteToMove)
-                        {
-                            ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
-                            if (lightList.Count != 0)
-                            {
-                                highlightPossibleMoves(lightList);
-                            }
-                        }
+                        DestroyLights();
+                        lightList.Clear();
+                        selectedPiece = null;
                     }
                 }
-                */
             }
         }
+    }
+
+    void CameraChange()
+    {
+        cameraFocusWhite = !cameraFocusWhite;
+
+        if (cameraFocusWhite == true)
+        {
+            transitionCamera.transform.localPosition = new Vector3(86.6f, 200.9f, -47f);
+            transitionCamera.transform.localRotation = Quaternion.Euler(60.58f, 0f, 0f);
+        }
+        else
+        {
+            transitionCamera.transform.localPosition = new Vector3(86.6f, 200.9f, -47f);
+            transitionCamera.transform.localRotation = Quaternion.Euler(60.58f, 180f, 0f);
+        }
+    }
+
+    IEnumerator AnimateCamera()
+    {
+
+        if (cameraFocusWhite == true)
+        {
+            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("whiteToBlack");
+            cameraFocusWhite = false;
+        }
+        else
+        {
+            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("blackToWhite");
+            cameraFocusWhite = true;
+        }
+        isCameraMoving = true;
+        yield return new WaitForSeconds(2.0f);
+        isCameraMoving = false;
     }
 
     void DestroyLights()
@@ -452,8 +336,8 @@ public class UIEngine : MonoBehaviour
             }
         }
         
-        Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
-        Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
+        //Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
+        //Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
 
         
     }

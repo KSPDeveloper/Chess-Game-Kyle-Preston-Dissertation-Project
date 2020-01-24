@@ -236,7 +236,6 @@ public class Chessboard : MonoBehaviour
                     {
                         lightList.Add(tempMove);
                         numberOfPossibleMovesB++;
-                        Debug.Log("Accessed");
                     }
 
                     //Used only for when the pawn has not moved from its stating position
@@ -252,7 +251,6 @@ public class Chessboard : MonoBehaviour
                             {
                                 lightList.Add(tempMove);
                                 numberOfPossibleMovesB++;
-                                Debug.Log("Accessed");
                             }
                         }
                     }
@@ -276,7 +274,6 @@ public class Chessboard : MonoBehaviour
                                 {
                                     lightList.Add(tempMove);
                                     numberOfPossibleMovesB++;
-                                    Debug.Log("Accessed");
                                 }
                             }
                         }
@@ -332,7 +329,6 @@ public class Chessboard : MonoBehaviour
                     if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
                     {
                         numberOfPossibleMovesB++;
-                        Debug.Log("Accessed");
                         lightList.Add(tempMove);
                     }
 
@@ -346,7 +342,6 @@ public class Chessboard : MonoBehaviour
                             tempMove -= moveForward;
                             if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -360,7 +355,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -417,7 +411,6 @@ public class Chessboard : MonoBehaviour
                     tempMove = startingPos - moveForward;
                     if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
-                        Debug.Log("Accessed");
                         numberOfPossibleMovesB++;
                         lightList.Add(tempMove);
                     }
@@ -432,7 +425,6 @@ public class Chessboard : MonoBehaviour
                             tempMove += moveForward;
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -445,7 +437,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -501,7 +492,6 @@ public class Chessboard : MonoBehaviour
                 tempMove -= moveForward - dir; // gets forward one, right / left one position
                 if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                 {
-                    Debug.Log("Accessed");
                     numberOfPossibleMovesB++;
                     lightList.Add(tempMove);
                 }
@@ -577,7 +567,6 @@ public class Chessboard : MonoBehaviour
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -586,7 +575,6 @@ public class Chessboard : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -696,7 +684,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
@@ -723,7 +710,6 @@ public class Chessboard : MonoBehaviour
 
                                 else
                                 {
-                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
@@ -797,7 +783,6 @@ public class Chessboard : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
@@ -861,7 +846,6 @@ public class Chessboard : MonoBehaviour
                 {
                     if (!piecePosition.ContainsKey(tempMove) && !UIEngineReference.whitePossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
-                        Debug.Log("Accessed");
                         numOfMovesB++;
                         lightList.Add(tempMove);
                     }
@@ -870,7 +854,6 @@ public class Chessboard : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "White")
                         {
-                            Debug.Log("Accessed");
                             numOfMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -909,7 +892,6 @@ public class Chessboard : MonoBehaviour
                     {
                         numOfMovesB++;
                         lightList.Add(tempMove);
-                        Debug.Log("Accessed");
                     }
 
                     if (piecePosition.ContainsKey(tempMove) && !UIEngineReference.ProtectedWhitePieces.Contains(tempMove))
@@ -918,7 +900,6 @@ public class Chessboard : MonoBehaviour
                         {
                             numOfMovesB++;
                             lightList.Add(tempMove);
-                            Debug.Log("Accessed");
                         }
                     }
                 }
@@ -1074,7 +1055,6 @@ public class Chessboard : MonoBehaviour
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                             }
@@ -1083,7 +1063,6 @@ public class Chessboard : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -1282,7 +1261,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
@@ -1309,7 +1287,6 @@ public class Chessboard : MonoBehaviour
                                 }
                                 else
                                 {
-                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
@@ -1381,7 +1358,6 @@ public class Chessboard : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                Debug.Log("Accessed");
                                 numberOfPossibleMovesB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
@@ -1459,7 +1435,6 @@ public class Chessboard : MonoBehaviour
                         tempMove -= dir;
                         if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
@@ -1476,7 +1451,6 @@ public class Chessboard : MonoBehaviour
 
                                 else
                                 {
-                                    Debug.Log("Accessed");
                                     numberOfPossibleMovesB++;
                                     lightList.Add(tempMove);
                                 }
@@ -1569,14 +1543,12 @@ public class Chessboard : MonoBehaviour
 
                         if (lineOfCheck.Contains(tempMove))
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            Debug.Log("Accessed");
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
