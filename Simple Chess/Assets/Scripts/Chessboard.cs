@@ -2084,7 +2084,7 @@ public class Chessboard : MonoBehaviour
         #endregion
 
         #region En Passant
-        Vector3 difference = new Vector3(1.25f, 0, 0);
+        Vector3 difference = new Vector3(0, 0, 1.25f);
         bool enPassantFound = false;
         foreach (KeyValuePair<Vector3,GameObject> piece in piecePosition)
         {
@@ -2093,7 +2093,7 @@ public class Chessboard : MonoBehaviour
                 if (piece.Value.GetComponent<Track>().enPassant == true)
                 {
                     Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
-                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition) + " ";
+                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition - difference) + " ";
                     enPassantFound = true;
                     break;
                 }
@@ -2103,7 +2103,7 @@ public class Chessboard : MonoBehaviour
                 if (piece.Value.GetComponent<Track>().enPassant == true)
                 {
                     Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
-                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition) + " ";
+                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition + difference) + " ";
                     enPassantFound = true;
                     break;
                 }
