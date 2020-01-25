@@ -5,6 +5,8 @@ using System;
 
 public class Chessboard : MonoBehaviour
 {
+    public int halfMove = 0;
+    public int fullMoves = 1, currentMove = 0;
     public bool checkMate = false;
     public int numberOfPossibleMovesB, numberOfPossibleMovesW;
     public UIEngine UIEngineReference;
@@ -17,8 +19,10 @@ public class Chessboard : MonoBehaviour
     public GameObject[] pieces = new GameObject[32];
     public Vector3[,] chessBoard2D = new Vector3[8, 8];
     public Dictionary<Vector3, GameObject> piecePosition = new Dictionary<Vector3, GameObject>();
+    public List<GameObject> temporaryCastlingPieceRefs = new List<GameObject>();
+    public GameObject temporaryEnPassantPieceRefs;
     public Vector3 pinnedPiece;
-    float bXMax = 8.75f, bXMin = 0f, bZMax = 8.75f, bZMin = 0f;
+    public float bXMax = 8.75f, bXMin = 0f, bZMax = 8.75f, bZMin = 0f, bXSpace = 1.25f, bZSpace = 1.25f;
     public int piecesPuttingKingInCheck = 0;
 
     void Start()
@@ -50,7 +54,7 @@ public class Chessboard : MonoBehaviour
 
     void InitiatePieces()
     {
-        //WHITE
+        #region White
         //REST OF PIECES
         pieces[0] = Instantiate(Rook, chessBoard.transform);
         pieces[1] = Instantiate(Knight, chessBoard.transform);
@@ -76,6 +80,8 @@ public class Chessboard : MonoBehaviour
         pieces[1].transform.localRotation = new Quaternion(0, 270, 0, 1);
         pieces[6].transform.localRotation = new Quaternion(0, 270, 0, 1);
 
+        //for King and Rooks
+
         //PAWNS
         for (int i = 8; i < 16; i++)
         {
@@ -85,14 +91,13 @@ public class Chessboard : MonoBehaviour
             pieces[i].transform.localRotation = new Quaternion(0, 0, 0, 0);
             pieces[i].GetComponent<Renderer>().material = white;
             pieces[i].tag = "White";
-            pieces[i].AddComponent<Track>().startingPosition = true;
+            pieces[i].AddComponent<Track>();
             piecePosition.Add(chessBoard2D[i - 8, 1], pieces[i]);
 
         }
+        #endregion
 
-
-        //BLACK//
-
+        #region Black
         //PAWNS//
         for (int i = 16; i < 24; i++)
         {
@@ -101,23 +106,20 @@ public class Chessboard : MonoBehaviour
             pieces[i].transform.localScale = new Vector3(1, 1, 1);
             pieces[i].transform.localRotation = new Quaternion(0, 0, 0, 0);
             pieces[i].GetComponent<Renderer>().material = black;
-            pieces[i].AddComponent<Track>().startingPosition = true;
+            pieces[i].AddComponent<Track>();
             pieces[i].tag = "Black";
             piecePosition.Add(chessBoard2D[i - 16, 6], pieces[i]);
 
         }
         //REST OF PIECES//
         pieces[24] = Instantiate(Rook, chessBoard.transform);
-        pieces[24].AddComponent<Track>().startingPosition = true;
         pieces[25] = Instantiate(Knight, chessBoard.transform);
         pieces[26] = Instantiate(Bishop, chessBoard.transform);
         pieces[27] = Instantiate(Queen, chessBoard.transform);
         pieces[28] = Instantiate(King, chessBoard.transform);
-        pieces[28].AddComponent<Track>().startingPosition = true;
         pieces[29] = Instantiate(Bishop, chessBoard.transform);
         pieces[30] = Instantiate(Knight, chessBoard.transform);
         pieces[31] = Instantiate(Rook, chessBoard.transform);
-        pieces[31].AddComponent<Track>().startingPosition = true;
 
         for (int i = 24; i < 32; i++)
         {
@@ -129,13 +131,14 @@ public class Chessboard : MonoBehaviour
             pieces[i].tag = "Black";
             piecePosition.Add(chessBoard2D[i - 24, 7], pieces[i]);
         }
+        #endregion
     }
 
-    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
+    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
-            PawnMovement(selectedPiece, ref lightList);
+            PawnMovement(selectedPiece, ref lightList, ref enPassantL, ref temporaryEnPassantPieceRefs);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Rook")
@@ -155,7 +158,7 @@ public class Chessboard : MonoBehaviour
 
         else if (selectedPiece.transform.GetChild(0).tag == "King")
         {
-            KingMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, numberOfPossibleMovesW, numberOfPossibleMovesB);
+            KingMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, numberOfPossibleMovesW, numberOfPossibleMovesB, ref castlingList, temporaryCastlingPieceRefs);
         }
         else if (selectedPiece.transform.GetChild(0).tag == "Queen")
         {
@@ -163,8 +166,9 @@ public class Chessboard : MonoBehaviour
         }
     }
 
-    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant)
     {
+        enPassantL.Clear();
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
         Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
@@ -224,7 +228,25 @@ public class Chessboard : MonoBehaviour
                                 }
                             }
                         }
+
+                        //Check for En Passant
+                        tempMove = startingPos; //resets tempUp
+                        tempMove += dir;
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            GameObject temp = piecePosition[tempMove];
+                            if (temp.transform.GetChild(0).tag == "Pawn" && temp.tag == "Black")
+                            {
+                                if (temp.GetComponent<Track>().enPassant == true)
+                                {
+                                    enPassantL.Add(temp.transform.localPosition + moveForward);
+                                    enemyPawnEnPassant = temp;
+                                }
+                            }
+                        }
                     }
+
+                   
                 }
 
                 else if (selectedPiece.tag == "Black")
@@ -274,6 +296,22 @@ public class Chessboard : MonoBehaviour
                                 {
                                     lightList.Add(tempMove);
                                     numberOfPossibleMovesB++;
+                                }
+                            }
+                        }
+
+                        //Check for En Passant
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= dir;
+                        if (piecePosition.ContainsKey(tempMove))
+                        {
+                            GameObject temp = piecePosition[tempMove];
+                            if (temp.transform.GetChild(0).tag == "Pawn" && temp.tag == "White")
+                            {
+                                if (temp.GetComponent<Track>().enPassant == true)
+                                {
+                                    enPassantL.Add(temp.transform.localPosition - moveForward);
+                                    enemyPawnEnPassant = temp;
                                 }
                             }
                         }
@@ -402,6 +440,25 @@ public class Chessboard : MonoBehaviour
                             numberOfPossibleMovesW++;
                             lightList.Add(tempMove);
                         }
+
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= dir;
+                        if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                        {
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                GameObject temp = piecePosition[tempMove];
+                                if (temp.transform.GetChild(0).tag == "Pawn" && temp.tag == "White")
+                                {
+                                    if (temp.GetComponent<Track>().enPassant == true)
+                                    {
+                                        numberOfPossibleMovesW++;
+                                        enPassantL.Add(temp.transform.localPosition - moveForward);
+                                        enemyPawnEnPassant = temp;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -440,7 +497,28 @@ public class Chessboard : MonoBehaviour
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
+
+                        tempMove = startingPos; //resets tempUp
+                        tempMove -= dir;
+                        if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
+                        {
+                            if (piecePosition.ContainsKey(tempMove))
+                            {
+                                GameObject temp = piecePosition[tempMove];
+                                if (temp.transform.GetChild(0).tag == "Pawn" && temp.tag == "Black")
+                                {
+                                    if (temp.GetComponent<Track>().enPassant == true)
+                                    {
+                                        numberOfPossibleMovesB++;
+                                        enPassantL.Add(temp.transform.localPosition - moveForward);
+                                        enemyPawnEnPassant = temp;
+                                    }
+                                }
+                            }
+                        }
                     }
+
+
                 }
             }
 
@@ -452,7 +530,7 @@ public class Chessboard : MonoBehaviour
         }
     }
 
-    public void PawnTakePositions(GameObject pawn, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
+    public void PawnTakePositions(GameObject pawn, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> enPassantLL)
     {
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
         Vector3 startingPos = pawn.transform.localPosition;
@@ -480,6 +558,12 @@ public class Chessboard : MonoBehaviour
                         pWPieces.Add(tempMove);
                     }
                 }
+            }
+
+            //En Passant
+            foreach (Vector3 dir in directions)
+            {
+
             }
         }
 
@@ -798,8 +882,9 @@ public class Chessboard : MonoBehaviour
 
     }
 
-    void KingMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, int numOfMovesW, int numOfMovesB)
+    void KingMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, int numOfMovesW, int numOfMovesB, ref List<Vector3> castlingLightList, List<GameObject> tempCastlingPieceRef)
     {
+        tempCastlingPieceRef.Clear();
         Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
         Vector3[] directions = new Vector3[8];
@@ -811,7 +896,98 @@ public class Chessboard : MonoBehaviour
         directions[5] = new Vector3(0, 0, 1.25f); //up
         directions[6] = new Vector3(-1.25f, 0, 1.25f); //up left
         directions[7] = new Vector3(-1.25f, 0, 0); //left
+        
+        if (selectedPiece.GetComponent<Track>().startingPosition == true)
+        {
+            //cannot castle whilst in check
+            if (check == false)
+            {
+                //check if the rooks are in their starting positions.
+                Vector3[] rookDir = new Vector3[2];
+                Vector3 tempRookMove;
 
+                rookDir[0] = new Vector3(-1.25f, 0, 0); //Left
+                rookDir[1] = new Vector3(1.25f, 0, 0); //Right
+
+                foreach (Vector3 rookDirections in rookDir)
+                {
+                    bool inLineOfCheck = false;
+                    bool movingLeft;
+                    tempRookMove = startingPos;
+                    tempRookMove += rookDirections;
+
+                    if (tempRookMove.x > startingPos.x)
+                    {
+                        movingLeft = false;
+                    }
+                    else
+                    {
+                        movingLeft = true;
+                    }
+                    if (selectedPiece.tag == "White")
+                    {
+                        while (!piecePosition.ContainsKey(tempRookMove) && tempRookMove.x >= bXMin && tempRookMove.z >= bZMin && tempRookMove.x <= bXMax && tempRookMove.z <= bZMax && inLineOfCheck == false)
+                        {
+                            if (movingLeft == true)
+                            {
+                                if (UIEngineReference.blackPossiblePositions.Contains(tempRookMove) && tempRookMove.x >= (startingPos.x + (rookDirections.x * 2)))
+                                {
+                                    inLineOfCheck = true;
+                                }
+                            }
+                            else
+                            {
+                                if (UIEngineReference.blackPossiblePositions.Contains(tempRookMove) && startingPos.x <= (startingPos.x + (rookDirections.x * 2)))
+                                {
+                                    inLineOfCheck = true;
+                                }
+                            }
+
+                            tempRookMove += rookDirections;
+                        }
+                    }
+                    else
+                    {
+                        while (!piecePosition.ContainsKey(tempRookMove) && tempRookMove.x >= bXMin && tempRookMove.z >= bZMin && tempRookMove.x <= bXMax && tempRookMove.z <= bZMax && inLineOfCheck == false)
+                        {
+                            if (movingLeft == true)
+                            {
+                                if (UIEngineReference.whitePossiblePositions.Contains(tempRookMove) && tempRookMove.x >= (startingPos.x + (rookDirections.x * 2)))
+                                {
+                                    inLineOfCheck = true;
+                                }
+                            }
+                            else
+                            {
+                                if (UIEngineReference.whitePossiblePositions.Contains(tempRookMove) && startingPos.x <= (startingPos.x + (rookDirections.x * 2)))
+                                {
+                                    inLineOfCheck = true;
+                                }
+                            }
+
+                            tempRookMove += rookDirections;
+                        }
+                    }
+                    //check if a rook has been found
+                    if (inLineOfCheck == false)
+                    {
+                        if (piecePosition.ContainsKey(tempRookMove))
+                        {
+                            if (piecePosition[tempRookMove].transform.GetChild(0).tag == "Rook")
+                            {
+                                //check if the rook has moved
+                                if (piecePosition[tempRookMove].GetComponent<Track>().startingPosition == true)
+                                {
+                                    castlingLightList.Add(startingPos + (2 * rookDirections));
+                                    tempCastlingPieceRef.Add(piecePosition[tempRookMove]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         foreach (Vector3 dir in directions)
         {
             tempMove = startingPos;
@@ -1730,4 +1906,370 @@ public class Chessboard : MonoBehaviour
             }
         }
     }
+    
+    public void MoveCounter(ref int currentM)
+    {
+        currentM++;
+        if (currentM % 2 == 0)
+        {
+            fullMoves++;
+        }
+    }
+
+    public string GetBoardState()
+    {
+        string fenString = "";
+
+        //rules 
+        /* 1.   Piece placement (from White's perspective). Each rank is described, starting with rank 8 and ending with rank 1; within each rank, 
+           the contents of each square are described from file "a" through file "h". Following the Standard Algebraic Notation (SAN), each piece 
+           is identified by a single letter taken from the standard English names (pawn = "P", knight = "N", bishop = "B", rook = "R",
+           queen = "Q" and king = "K").[1] White pieces are designated using upper-case letters ("PNBRQK") while black pieces use lowercase ("pnbrqk").
+           Empty squares are noted using digits 1 through 8 (the number of empty squares), and "/" separates ranks. */ //DONE//
+
+        /* 2.  Active color. "w" means White moves next, "b" means Black moves next. */
+
+        /* 3.  Castling availability. If neither side can castle, this is "-". Otherwise, this has one or more letters: "K" (White can castle kingside), 
+           "Q" (White can castle queenside), "k" (Black can castle kingside), and/or "q" (Black can castle queenside). */
+
+        /* 4.   En passant target square in algebraic notation. If there's no en passant target square, this is "-". If a pawn has just made a two-square move, 
+            this is the position "behind" the pawn. This is recorded regardless of whether there is a pawn in position to make an en passant capture        */
+
+        /* 5.   Halfmove clock: This is the number of halfmoves since the last capture or pawn advance. 
+            This is used to determine if a draw can be claimed under the fifty-move rule.        */
+
+        /* 6.   Fullmove number: The number of the full move. It starts at 1, and is incremented after Black's move.    */
+
+
+        #region Piece Placement
+        int emptySpaceCount = 0;
+        for (float z = bZMax; z >= bZMin; z -= 1.25f)
+        {
+            for (float x = bXMin; x <= bXMax; x += 1.25f)
+            {
+                //for new line exluding first line
+                if (!z.Equals(bZMax) && x == 0)
+                {
+                    if (emptySpaceCount > 0)
+                    {
+                        fenString += emptySpaceCount.ToString();
+                    }
+                    fenString += "/";
+                    emptySpaceCount = 0;
+                }
+
+                if (piecePosition.ContainsKey(new Vector3(x, 0, z)))
+                {
+                    if (emptySpaceCount > 0)
+                    {
+                        fenString += emptySpaceCount.ToString();
+                        emptySpaceCount = 0;
+                    }
+                    fenString += PieceConverter(piecePosition[new Vector3(x, 0, z)].transform.GetChild(0).tag, piecePosition[new Vector3(x, 0, z)].tag);
+                }
+                else
+                {
+                    emptySpaceCount++;
+                }
+
+
+            }
+        }
+        #endregion
+
+        #region Active Colour
+        if (whiteToMove == true)
+        {
+            fenString += " w ";
+        }
+        else
+        {
+            fenString += " b ";
+        }
+        #endregion
+
+        #region Castling Availability
+        bool bKingStartingPos = false, wKingStartingPos = false;
+        bool wKingSideC = false, wQueenSideC = false, bKingSideC = false, bQueenSideC = false;
+        foreach (KeyValuePair<Vector3, GameObject> piece in piecePosition)
+        {
+            if (piece.Value.tag == "White")
+            {
+                if (piece.Value.transform.GetChild(0).tag == "King")
+                {
+                    if (piece.Value.GetComponent<Track>().startingPosition == true)
+                    {
+                        wKingStartingPos = true;
+                    }
+                }
+
+                else if (piece.Value.transform.GetChild(0).tag == "Rook")
+                {
+                    if (piece.Key.x == bXMin)
+                    {
+                        if (piece.Value.GetComponent<Track>().startingPosition == true)
+                        {
+                            wKingSideC = true;
+                        }
+                    }
+                    else if (piece.Key.x == bXMax)
+                    {
+                        if (piece.Value.GetComponent<Track>().startingPosition == true)
+                        {
+                            wQueenSideC = true;
+                        }
+                    }
+                    
+                }
+            }
+
+            if (piece.Value.tag == "Black")
+            {
+                if (piece.Value.transform.GetChild(0).tag == "King")
+                {
+                    if (piece.Value.GetComponent<Track>().startingPosition == true)
+                    {
+                        bKingStartingPos = true;
+                    }
+                }
+
+                else if (piece.Value.transform.GetChild(0).tag == "Rook")
+                {
+                    if (piece.Key.x == bXMin)
+                    {
+                        if (piece.Value.GetComponent<Track>().startingPosition == true)
+                        {
+                            bKingSideC = true;
+                        }
+                    }
+                    else if (piece.Key.x == bXMax)
+                    {
+                        if (piece.Value.GetComponent<Track>().startingPosition == true)
+                        {
+                            bQueenSideC = true;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        if (wKingStartingPos == true)
+        {
+            if (wKingSideC == true)
+            {
+                fenString += "K";
+            }
+            if (wQueenSideC == true)
+            {
+                fenString += "Q";
+            }
+        }
+        if (bKingStartingPos == true)
+        {
+            if (bQueenSideC == true)
+            {
+                fenString += "k";
+            }
+            if (bKingSideC == true)
+            {
+                fenString += "q";
+            }
+        }
+
+        if (wKingStartingPos == false && bKingStartingPos == false)
+        {
+            fenString += "-";
+        }
+        #endregion
+
+        #region En Passant
+        Vector3 difference = new Vector3(1.25f, 0, 0);
+        bool enPassantFound = false;
+        foreach (KeyValuePair<Vector3,GameObject> piece in piecePosition)
+        {
+            if (piece.Value.tag == "White")
+            {
+                if (piece.Value.GetComponent<Track>().enPassant == true)
+                {
+                    Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
+                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition) + " ";
+                    enPassantFound = true;
+                    break;
+                }
+            }
+            else
+            {
+                if (piece.Value.GetComponent<Track>().enPassant == true)
+                {
+                    Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
+                    fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition) + " ";
+                    enPassantFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (enPassantFound == false)
+        {
+            fenString += " - ";
+        }
+
+        #endregion
+
+        #region Halfmove Clock
+
+        fenString += halfMove.ToString();
+
+        #endregion
+
+        #region Fullmove Number
+
+        fenString += " " + fullMoves.ToString();
+
+        #endregion
+
+        return fenString;
+
+    }
+
+    public string PieceConverter(string pieceName, string pieceColour)
+    {
+        string s = "";
+        if (pieceColour == "Black")
+        {
+            if (pieceName == "Pawn")
+            {
+                s = "p";
+            }
+            else if (pieceName == "Rook")
+            {
+                s = "r";
+            }
+            else if (pieceName == "Knight")
+            {
+                s = "n";
+            }
+            else if (pieceName == "Bishop")
+            {
+                s = "b";
+            }
+            else if (pieceName == "Queen")
+            {
+                s = "q";
+            }
+            else if (pieceName == "King")
+            {
+                s = "k";
+            }
+        }
+
+        else if (pieceColour == "White")
+        {
+            if (pieceName == "Pawn")
+            {
+                s = "P";
+            }
+            else if (pieceName == "Rook")
+            {
+                s = "R";
+            }
+            else if (pieceName == "Knight")
+            {
+                s = "N";
+            }
+            else if (pieceName == "Bishop")
+            {
+                s = "B";
+            }
+            else if (pieceName == "Queen")
+            {
+                s = "Q";
+            }
+            else if (pieceName == "King")
+            {
+                s = "K";
+            }
+        }
+
+
+        return s;
+
+    }
+
+
+    public string ConvertPositionIntoBoardState(Vector3 currentPos)
+    {
+        string boardPos = "";
+
+        if (currentPos.x.Equals(bXMin))
+        {
+            boardPos += "a";
+        }
+        else if (currentPos.x.Equals((bXMin + bXSpace)))
+        {
+            boardPos += "b";
+        }
+        else if (currentPos.x.Equals(bXMin + (2 * bXSpace)))
+        {
+            boardPos += "c";
+        }
+        else if (currentPos.x.Equals(bXMin + (3 * bXSpace)))
+        {
+            boardPos += "d";
+        }
+        else if (currentPos.x.Equals(bXMin + (4 * bXSpace)))
+        {
+            boardPos += "e";
+        }
+        else if (currentPos.x.Equals(bXMin + (5 * bXSpace)))
+        {
+            boardPos += "f";
+        }
+        else if (currentPos.x.Equals(bXMin + (6 * bXSpace)))
+        {
+            boardPos += "g";
+        }
+        else if (currentPos.x.Equals(bXMin + (7 * bXSpace)))
+        {
+            boardPos += "h";
+        }
+
+        if (currentPos.z.Equals(bZMin))
+        {
+            boardPos += "1";
+        }
+        else if (currentPos.z.Equals(bZMin + bZSpace))
+        {
+            boardPos += "2";
+        }
+        else if (currentPos.z.Equals(bZMin + (2* bZSpace)))
+        {
+            boardPos += "3";
+        }
+        else if (currentPos.z.Equals(bZMin + (3 * bZSpace)))
+        {
+            boardPos += "4";
+        }
+        else if (currentPos.z.Equals(bZMin + (4 * bZSpace)))
+        {
+            boardPos += "5";
+        }
+        else if (currentPos.z.Equals(bZMin + (5 * bZSpace)))
+        {
+            boardPos += "6";
+        }
+        else if (currentPos.z.Equals(bZMin + (6 * bZSpace)))
+        {
+            boardPos += "7";
+        }
+        else if (currentPos.z.Equals(bZMin + (7 * bZSpace)))
+        {
+            boardPos += "8";
+        }
+
+        return boardPos;
+    }
+
+
 }

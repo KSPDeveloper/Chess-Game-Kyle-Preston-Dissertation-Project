@@ -6,15 +6,6 @@ public class Track : MonoBehaviour
 {
     public bool startingPosition = true;
     public bool pinned = false;
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public bool enPassant = false;
+    public int enPassantRound = 0;
 }

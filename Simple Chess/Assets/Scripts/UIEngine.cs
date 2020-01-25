@@ -8,41 +8,25 @@ public class UIEngine : MonoBehaviour
     public bool cameraFocusWhite = true;
     bool isCameraMoving = false;
     public TextMeshProUGUI playerTurn;
-    public GameObject selectedPiece;
+    public GameObject[] lights, castlingLights;
+    public GameObject selectedPiece, rookCastling, enPassantLights, pawnEnPassant;
     public GameObject lightPrefab, board, whiteGraveyard, blackGraveyard;
     Chessboard ChessboardRef;
     public List<Vector3> lightList = new List<Vector3>();
-    public GameObject[] lights;
+    public List<Vector3> castlingLightList = new List<Vector3>();
+    public List<Vector3> EnPassantLightList = new List<Vector3>();
     public List<Vector3> whitePossiblePositions = new List<Vector3>();
     public List<Vector3> blackPossiblePositions = new List<Vector3>();
     public List<Vector3> ProtectedWhitePieces = new List<Vector3>();
     public List<Vector3> ProtectedBlackPieces = new List<Vector3>();
-
+    Vector3 graveYardMoveW = new Vector3(3.0f, 0, -125.0f);
+    Vector3 graveYardMoveB = new Vector3(3.0f, 0, -125.0f);
+    bool temp = false;
     List<Vector3> TempList1 = new List<Vector3>();
     List<Vector3> TempList2 = new List<Vector3>();
-
-    string[] piecesWSP = { "Pawn", "King", "Rook" };
-    Vector3[] possiblePositions;
-
     void Start()
     {
         ChessboardRef = FindObjectOfType<Chessboard>();
-        Vector3[] possiblePositions = new Vector3[15];
-        possiblePositions[0] = new Vector3();
-        possiblePositions[1] = new Vector3();
-        possiblePositions[2] = new Vector3();
-        possiblePositions[3] = new Vector3();
-        possiblePositions[4] = new Vector3();
-        possiblePositions[5] = new Vector3();
-        possiblePositions[6] = new Vector3();
-        possiblePositions[7] = new Vector3();
-        possiblePositions[8] = new Vector3();
-        possiblePositions[9] = new Vector3();
-        possiblePositions[10] = new Vector3();
-        possiblePositions[11] = new Vector3();
-        possiblePositions[12] = new Vector3();
-        possiblePositions[13] = new Vector3();
-        possiblePositions[14] = new Vector3();
         UpdateUI();
     }
 
@@ -58,10 +42,17 @@ public class UIEngine : MonoBehaviour
                 {
                     if (hitInfo.transform.tag == "Move")
                     {
+                        if (selectedPiece.transform.GetChild(0).tag == "Pawn")
+                        {
+                            ChessboardRef.halfMove = 0;
+                        }
+                        else ChessboardRef.halfMove++;
+
                         if (selectedPiece.GetComponent<Track>().startingPosition == true)
                         {
                             selectedPiece.GetComponent<Track>().startingPosition = false;
                         }
+                        EnPassantCheck(selectedPiece, hitInfo.transform.gameObject);
                         ChessboardRef.check = false; // Resets Check
                         ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
                         TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
@@ -73,8 +64,9 @@ public class UIEngine : MonoBehaviour
                         ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
                         StartCoroutine(AnimateCamera());
                         UpdateUI();
-                        DestroyLights();
-                        lightList.Clear();
+                        DestroyAndClearLights();
+                        ChessboardRef.MoveCounter(ref ChessboardRef.currentMove);
+                        Debug.Log(ChessboardRef.GetBoardState());
                     }
 
                     else if (hitInfo.transform.gameObject.tag == "White")
@@ -84,20 +76,18 @@ public class UIEngine : MonoBehaviour
                         {
                             if (selectedPiece == hitInfo.transform.gameObject)
                             {
-                                DestroyLights();
-                                lightList.Clear();
+                                DestroyAndClearLights();
                                 selectedPiece = null;
                             }
 
                             else
                             {
-                                DestroyLights();
-                                lightList.Clear();
+                                DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
                                 if (lightList.Count != 0)
                                 {
-                                    highlightPossibleMoves(lightList);
+                                    highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
                                 }
                             }
                         }
@@ -109,6 +99,12 @@ public class UIEngine : MonoBehaviour
                             {
                                 if (lightList.Contains(hitInfo.transform.localPosition))
                                 {
+                                    if (selectedPiece.transform.GetChild(0).tag == "Pawn")
+                                    {
+                                        ChessboardRef.halfMove = 0;
+                                    }
+                                    else ChessboardRef.halfMove++;
+
                                     if (selectedPiece.GetComponent<Track>().startingPosition == true)
                                     {
                                         selectedPiece.GetComponent<Track>().startingPosition = false;
@@ -123,8 +119,9 @@ public class UIEngine : MonoBehaviour
                                     ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
                                     StartCoroutine(AnimateCamera());
                                     UpdateUI();
-                                    DestroyLights();
-                                    lightList.Clear();
+                                    DestroyAndClearLights();
+                                    ChessboardRef.MoveCounter(ref ChessboardRef.currentMove);
+                                    Debug.Log(ChessboardRef.GetBoardState());
                                 }
                             }
                         }
@@ -139,6 +136,12 @@ public class UIEngine : MonoBehaviour
                             {
                                 if (lightList.Contains(hitInfo.transform.localPosition))
                                 {
+                                    if (selectedPiece.transform.GetChild(0).tag == "Pawn")
+                                    {
+                                        ChessboardRef.halfMove = 0;
+                                    }
+                                    else ChessboardRef.halfMove++;
+
                                     if (selectedPiece.GetComponent<Track>().startingPosition == true)
                                     {
                                         selectedPiece.GetComponent<Track>().startingPosition = false;
@@ -153,8 +156,9 @@ public class UIEngine : MonoBehaviour
                                     ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
                                     StartCoroutine(AnimateCamera());
                                     UpdateUI();
-                                    DestroyLights();
-                                    lightList.Clear();
+                                    DestroyAndClearLights();
+                                    ChessboardRef.MoveCounter(ref ChessboardRef.currentMove);
+                                    Debug.Log(ChessboardRef.GetBoardState());
                                 }
                             }
                         }
@@ -164,34 +168,112 @@ public class UIEngine : MonoBehaviour
                         {
                             if (selectedPiece == hitInfo.transform.gameObject)
                             {
-                                DestroyLights();
-                                lightList.Clear();
+                                DestroyAndClearLights();
                                 selectedPiece = null;
                             }
 
                             else
                             {
-                                DestroyLights();
-                                lightList.Clear();
+                                DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
                                 if (lightList.Count != 0)
                                 {
-                                    highlightPossibleMoves(lightList);
+                                    highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
                                 }
                             }
                         }
                     }
 
+                    else if (hitInfo.transform.tag == "Castling")
+                    {
+                        ChessboardRef.halfMove++;
+                        bool moveLeft = false;
+                        rookCastling = null;
+                        selectedPiece.GetComponent<Track>().startingPosition = false;
+                        //gets the correct rook
+
+                        foreach (GameObject rook in ChessboardRef.temporaryCastlingPieceRefs)
+                        {
+                            if (rook.transform.localPosition.x > hitInfo.transform.localPosition.x)
+                            {
+                                moveLeft = false;
+                                rookCastling = rook;
+                            }
+                            else
+                            {
+                                moveLeft = true;
+                                rookCastling = rook;
+                            }
+                        }
+
+                        ChessboardRef.check = false; // Resets Check
+                        ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
+                        ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old king position + gameobject to the dictionary
+                        ChessboardRef.piecePosition.Remove(rookCastling.transform.localPosition);// Removes the old rook position + gameobject to the dictionary
+                        selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
+                        selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
+
+                        if (moveLeft == true)
+                        {
+                            rookCastling.transform.localPosition = hitInfo.transform.localPosition + new Vector3(1.25f,0,0);
+                            rookCastling.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
+                        }
+                        else
+                        {
+                            rookCastling.transform.localPosition = hitInfo.transform.localPosition - new Vector3(1.25f, 0, 0);
+                            rookCastling.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
+                        }
+
+                        ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the Kings new position + gameobject to the dictionary
+                        ChessboardRef.piecePosition.Add(rookCastling.transform.localPosition, rookCastling); // Adds the Rooks new position + gameobject to the dictionary
+
+                        rookCastling.GetComponent<Track>().startingPosition = false;
+
+                        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                        ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+                        StartCoroutine(AnimateCamera());
+                        UpdateUI();
+                        DestroyAndClearLights();
+                        lightList.Clear();
+                        castlingLightList.Clear();
+                    }
+
+                    else if (hitInfo.transform.tag == "EnPassant")
+                    {
+                        ChessboardRef.halfMove = 0;
+                        pawnEnPassant = ChessboardRef.temporaryEnPassantPieceRefs;
+                        ChessboardRef.check = false; // Resets Check
+                        ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove; //alternates between white and black to move
+                        ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);// Removes the old king position + gameobject to the dictionary
+                        TakePieceCheck(pawnEnPassant, new Vector3(0, 0, 0));
+                        selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
+                        selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
+                        ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the Kings new position + gameobject to the dictionary
+                        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                        ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+                        StartCoroutine(AnimateCamera());
+                        UpdateUI();
+                        DestroyAndClearLights();
+                        lightList.Clear();
+                        castlingLightList.Clear();
+                    }
                     else
                     {
-                        DestroyLights();
-                        lightList.Clear();
+                        DestroyAndClearLights();
                         selectedPiece = null;
                     }
                 }
             }
         }
+
+
+        if (temp == false)
+        {
+            Debug.Log(ChessboardRef.GetBoardState());
+            temp = true;
+        }
+       
     }
 
     void CameraChange()
@@ -228,11 +310,24 @@ public class UIEngine : MonoBehaviour
         isCameraMoving = false;
     }
 
-    void DestroyLights()
+    void DestroyAndClearLights()
     {
+        lightList.Clear();
+        castlingLightList.Clear();
+        EnPassantLightList.Clear();
         foreach (Transform child in board.transform)
         {
             if (child.tag == "Move")
+            {
+                Destroy(child.gameObject);
+            }
+
+            else if (child.tag == "Castling")
+            {
+                Destroy(child.gameObject);
+            }
+
+            else if (child.tag == "EnPassant")
             {
                 Destroy(child.gameObject);
             }
@@ -242,20 +337,26 @@ public class UIEngine : MonoBehaviour
     void TakePieceCheck(GameObject newPos, Vector3 difference)
     {
         Vector3 temp = newPos.transform.localPosition + difference;
-
         if (ChessboardRef.piecePosition.ContainsKey(temp)) //checks if there is a piece what can be taken
         {
+            ChessboardRef.halfMove = 0;
             if (ChessboardRef.piecePosition[temp].tag == "White")
             {
+                graveYardMoveW += new Vector3(3.0f,0,20.0f);
                 GameObject tempGameO = Instantiate(ChessboardRef.piecePosition[temp].gameObject, whiteGraveyard.transform);
                 tempGameO.GetComponent<Renderer>().material = ChessboardRef.white;
                 tempGameO.transform.localScale = new Vector3(20, 20, 20);
+                tempGameO.transform.localPosition += graveYardMoveW;
+                tempGameO.tag = "Dead";
             }
             else
-            { 
+            {
+                graveYardMoveB += new Vector3(3.0f, 0, 20.0f);
                 GameObject tempGameO = Instantiate(ChessboardRef.piecePosition[temp].gameObject, blackGraveyard.transform);
                 tempGameO.GetComponent<Renderer>().material = ChessboardRef.black;
                 tempGameO.transform.localScale = new Vector3(20, 20, 20);
+                tempGameO.transform.localPosition += graveYardMoveB;
+                tempGameO.tag = "Dead";
             }
             Destroy(ChessboardRef.piecePosition[temp].gameObject);
             ChessboardRef.piecePosition.Remove(temp);
@@ -282,6 +383,14 @@ public class UIEngine : MonoBehaviour
         foreach (KeyValuePair<Vector3, GameObject> pPos in ChessboardRef.piecePosition)
         {
             pPos.Value.GetComponent<Track>().pinned = false;
+
+            if (pPos.Value.GetComponent<Track>().enPassant == true)
+            {
+                if (pPos.Value.GetComponent<Track>().enPassantRound == ChessboardRef.currentMove)
+                {
+                    pPos.Value.GetComponent<Track>().enPassant = false;
+                }
+            }
         }
 
         //Temporarily seperates the chess pieces by their colour//
@@ -298,14 +407,13 @@ public class UIEngine : MonoBehaviour
             }
         }
 
-        //If white to move, calcualte blacks moves first for chance of check.
+        // If white to move, calcualte blacks moves first for chance of check.
         if (ChessboardRef.whiteToMove)
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
             }
-
             if (ChessboardRef.piecesPuttingKingInCheck > 0)
             {
                 ChessboardRef.check = true;
@@ -313,7 +421,7 @@ public class UIEngine : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
             }
         }
 
@@ -321,7 +429,7 @@ public class UIEngine : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces);
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
             }
 
             if (ChessboardRef.piecesPuttingKingInCheck > 0)
@@ -332,21 +440,22 @@ public class UIEngine : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces);
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
             }
         }
         
         //Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
         //Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
-
-        
     }
 
-    void highlightPossibleMoves(List<Vector3> lightlist)
+    void highlightPossibleMoves(List<Vector3> lightlist, List<Vector3> castlingList, List<Vector3> enPassantLL)
     {
-        lights = new GameObject[lightList.Count];
+        lights = new GameObject[lightlist.Count];
+        castlingLights = new GameObject[castlingList.Count];
+        enPassantLights = new GameObject();
+
         int i = 0;
-        foreach (Vector3 light in lightList)
+        foreach (Vector3 light in lightlist)
         {
             if (!ChessboardRef.blackSpaces.Contains(light)) //this is for the black squares on the board as the lighting requires a different intensity to be seen.
             {
@@ -362,6 +471,72 @@ public class UIEngine : MonoBehaviour
                 lights[i].transform.localPosition = new Vector3(light.x, 0.4f, light.z);
                 lights[i].tag = "Move";
                 i++;
+            }
+        }
+
+        i = 0;
+        if (castlingList.Count > 0)
+        {
+            foreach (Vector3 castleLight in castlingList)
+            {
+                if (!ChessboardRef.blackSpaces.Contains(castleLight)) //this is for the black squares on the board as the lighting requires a different intensity to be seen.
+                {
+                    castlingLights[i] = Instantiate(lightPrefab, ChessboardRef.chessBoard.transform);
+                    castlingLights[i].transform.localPosition = new Vector3(castleLight.x, 0.4f, castleLight.z);
+                    castlingLights[i].GetComponent<Light>().intensity = 3;
+                    castlingLights[i].tag = "Castling";
+                    i++;
+                }
+                else
+                {
+                    castlingLights[i] = Instantiate(lightPrefab, ChessboardRef.chessBoard.transform);
+                    castlingLights[i].transform.localPosition = new Vector3(castleLight.x, 0.4f, castleLight.z);
+                    castlingLights[i].tag = "Castling";
+                    i++;
+                }
+            }
+        }
+
+        if (enPassantLL.Count > 0)
+        {
+            foreach (Vector3 ePL in enPassantLL)
+            {
+                if (!ChessboardRef.blackSpaces.Contains(ePL)) //this is for the black squares on the board as the lighting requires a different intensity to be seen.
+                {
+                    enPassantLights = Instantiate(lightPrefab, ChessboardRef.chessBoard.transform);
+                    enPassantLights.transform.localPosition = new Vector3(ePL.x, 0.4f, ePL.z);
+                    enPassantLights.GetComponent<Light>().intensity = 3;
+                    enPassantLights.tag = "EnPassant";
+                }
+                else
+                {
+                    enPassantLights = Instantiate(lightPrefab, ChessboardRef.chessBoard.transform);
+                    enPassantLights.transform.localPosition = new Vector3(ePL.x, 0.4f, ePL.z);
+                    enPassantLights.tag = "EnPassant";
+                }
+            }
+        }  
+    }
+
+    void EnPassantCheck(GameObject selectedPiece, GameObject hitInfo)
+    {
+        if (selectedPiece.transform.GetChild(0).tag == "Pawn")
+        {
+            if (selectedPiece.transform.tag == "White")
+            {
+                if (selectedPiece.transform.localPosition.z == (hitInfo.transform.localPosition.z - (2* ChessboardRef.bZSpace)))
+                {
+                    selectedPiece.GetComponent<Track>().enPassant = true;
+                    selectedPiece.GetComponent<Track>().enPassantRound = ChessboardRef.currentMove + 1;
+                }
+            }
+            else if (selectedPiece.transform.tag == "Black")
+            {
+                if (selectedPiece.transform.localPosition.z == (hitInfo.transform.localPosition.z + (2 * ChessboardRef.bZSpace)))
+                {
+                    selectedPiece.GetComponent<Track>().enPassant = true;
+                    selectedPiece.GetComponent<Track>().enPassantRound = ChessboardRef.currentMove + 1;
+                }
             }
         }
     }
