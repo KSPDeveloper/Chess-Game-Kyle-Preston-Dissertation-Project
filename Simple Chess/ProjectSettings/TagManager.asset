@@ -13,6 +13,9 @@ TagManager:
   - Queen
   - King
   - Move
+  - Castling
+  - EnPassant
+  - Dead
   layers:
   - Default
   - TransparentFX

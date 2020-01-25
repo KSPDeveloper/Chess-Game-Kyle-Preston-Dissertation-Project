@@ -114,7 +114,7 @@ MonoBehaviour:
   m_MinSize: {x: 683, y: 344}
   m_MaxSize: {x: 12008, y: 8044}
   vertical: 1
-  controlID: 67
+  controlID: 14
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -140,7 +140,7 @@ MonoBehaviour:
   m_MinSize: {x: 683, y: 222}
   m_MaxSize: {x: 12008, y: 4022}
   vertical: 0
-  controlID: 68
+  controlID: 15
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -241,8 +241,8 @@ MonoBehaviour:
     y: 670
     width: 1920
     height: 277
-  m_MinSize: {x: 100, y: 122}
-  m_MaxSize: {x: 4000, y: 4022}
+  m_MinSize: {x: 100, y: 100}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 18}
   m_Panes:
   - {fileID: 17}
@@ -424,9 +424,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 6832ffff
       m_LastClickedID: 0
-      m_ExpandedIDs: 78fbffff
+      m_ExpandedIDs: 78fbffff7031000084310000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -486,9 +486,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 81.93472, y: -12.00597, z: 78.64139}
+    m_Target: {x: 82.27969, y: -49.66817, z: 111.45563}
     speed: 2
-    m_Value: {x: 81.93472, y: -12.00597, z: 78.64139}
+    m_Value: {x: 82.27969, y: -49.66817, z: 111.45563}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -517,9 +517,9 @@ MonoBehaviour:
       speed: 2
       m_Value: 0
   m_Rotation:
-    m_Target: {x: 0.36921352, y: 0.010466205, z: 0.0018633365, w: 0.92942727}
+    m_Target: {x: 0.41334358, y: 0.02696048, z: -0.006012098, w: 0.91030544}
     speed: 2
-    m_Value: {x: -0.36921352, y: -0.010466205, z: -0.0018633365, w: -0.92942727}
+    m_Value: {x: 0.4132874, y: 0.026956815, z: -0.006011281, w: 0.91018176}
   m_Size:
     m_Target: 285.81592
     speed: 2
@@ -650,21 +650,21 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Animations
+    - Assets/Scripts
   m_ViewMode: 1
   m_StartGridSize: 76
   m_LastFolders:
-  - Assets/Animations
+  - Assets/Scripts
   m_LastFoldersGridSize: 76
   m_LastProjectPath: D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple
     Chess
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 62}
-    m_SelectedIDs: e6330000
-    m_LastClickedID: 13286
-    m_ExpandedIDs: 000000001c2d0000602d0000a42f0000
+    scrollPos: {x: 0, y: 34}
+    m_SelectedIDs: fa2d0000
+    m_LastClickedID: 11770
+    m_ExpandedIDs: 00000000fe2c0000422d00004c2f000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -692,7 +692,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000001c2d0000602d0000a42f0000
+    m_ExpandedIDs: 00000000fe2c0000422d00004c2f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -717,9 +717,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 8ec2ffff
-    m_LastClickedInstanceID: -15730
-    m_HadKeyboardFocusLastEvent: 1
+    m_SelectedInstanceIDs: 8a310000
+    m_LastClickedInstanceID: 12682
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c6230000b0aaf3ff8262000000000000aa540000be2c00006e2a0000368b0100548b0100e82e0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -802,4 +802,4 @@ MonoBehaviour:
   m_ViewDataDictionary: {fileID: 0}
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: -15730
+  m_LastSelectedObjectID: -52632
