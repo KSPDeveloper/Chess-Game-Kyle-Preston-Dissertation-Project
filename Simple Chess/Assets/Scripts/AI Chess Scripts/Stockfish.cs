@@ -9,38 +9,38 @@ using System.Linq;
 public class Stockfish : MonoBehaviour
 {
     Process p;
-    String bestMoveInAlgebraicNotation;
+    string bestMoveInAlgebraicNotation;
 
     void Start()
     {
-        UnityEngine.Debug.Log(GetBestMove("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"));
+        //UnityEngine.Debug.Log(GetBestMove("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"));
     }
 
-    void GetStockfishCommands()
+    public string GetStockfishCommands(string forsythEdwardsNotationString)
     {
+        return GetBestMove(forsythEdwardsNotationString);
 
     }
 
 
-    string GetBestMove(string forsythEdwardsNotationString)
+    public string GetBestMove(string forsythEdwardsNotationString)
     {
         var p = new Process();
         p.StartInfo.FileName = "C:/Users/kspre/Desktop/stockfish-10-win/stockfish-10-win/Windows/stockfish_10_x64.exe";
         p.StartInfo.UseShellExecute = false;
         p.StartInfo.RedirectStandardInput = true;
         p.StartInfo.RedirectStandardOutput = true;
-       // p.StartInfo.RedirectStandardError = true;
         p.StartInfo.CreateNoWindow = true;
         p.Start();
         string setupString = "position fen " + forsythEdwardsNotationString;
         p.StandardInput.WriteLine("uci");
         //Waits for the Console to return "uciok"
         string standard_output;
+
         while ((standard_output = p.StandardOutput.ReadLine()) != null)
         {
             if (standard_output.Contains("uciok"))
             {
-                UnityEngine.Debug.Log("A");
                 p.StandardInput.WriteLine(setupString);
                 break;
             }
@@ -53,23 +53,16 @@ public class Stockfish : MonoBehaviour
 
         p.StandardInput.WriteLine(processString);
 
-
-
-
         while ((standard_output = p.StandardOutput.ReadLine()) != null)
-               {
-                   if (standard_output.Contains("bestmove"))
-                   {
-                       UnityEngine.Debug.Log("B");
-                       bestMoveInAlgebraicNotation = standard_output.Substring(9);
-                       p.Close();
-                       break;
-                   }
-                }
-
-
-
-            return bestMoveInAlgebraicNotation;
+        {
+            if (standard_output.Contains("bestmove"))
+            {
+                bestMoveInAlgebraicNotation = standard_output.Substring(9);
+                p.Close();
+                break;
+            }
+        }
+        return bestMoveInAlgebraicNotation;
     }
 
 

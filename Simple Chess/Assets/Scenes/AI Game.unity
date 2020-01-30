@@ -593,6 +593,7 @@ GameObject:
   - component: {fileID: 1199316341}
   - component: {fileID: 1199316342}
   - component: {fileID: 1199316340}
+  - component: {fileID: 1199316343}
   m_Layer: 0
   m_Name: Game Controller
   m_TagString: Untagged
@@ -612,6 +613,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fc7031f201363843af9900d70d766ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  halfMove: 0
+  fullMoves: 1
+  currentMove: 0
   checkMate: 0
   numberOfPossibleMovesB: 0
   numberOfPossibleMovesW: 0
@@ -666,7 +670,15 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  temporaryCastlingPieceRefs: []
+  temporaryEnPassantPieceRefs: {fileID: 0}
   pinnedPiece: {x: 0, y: 0, z: 0}
+  bXMax: 8.75
+  bXMin: 0
+  bZMax: 8.75
+  bZMin: 0
+  bXSpace: 1.25
+  bZSpace: 1.25
   piecesPuttingKingInCheck: 0
 --- !u!4 &1199316341
 Transform:
@@ -694,21 +706,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bbb5c65545688743aeaa1e3cbf46db9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerSelectedWhite: 0
   transitionCamera: {fileID: 1211064163}
   cameraFocusWhite: 1
   playerTurn: {fileID: 907800354}
+  lights: []
+  castlingLights: []
+  enPassantLights: []
   selectedPiece: {fileID: 0}
+  rookCastling: {fileID: 0}
+  pawnEnPassant: {fileID: 0}
   lightPrefab: {fileID: 6481386719580159650, guid: 5306a2b0184afb947bb198e1da04af93,
     type: 3}
   board: {fileID: 821757002}
   whiteGraveyard: {fileID: 1775721655}
   blackGraveyard: {fileID: 1054832103}
   lightList: []
-  lights: []
+  castlingLightList: []
+  EnPassantLightList: []
   whitePossiblePositions: []
   blackPossiblePositions: []
   ProtectedWhitePieces: []
   ProtectedBlackPieces: []
+--- !u!114 &1199316343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1199316339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9a2d786aebf9d74aba260889fa120ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1211064159
 GameObject:
   m_ObjectHideFlags: 0

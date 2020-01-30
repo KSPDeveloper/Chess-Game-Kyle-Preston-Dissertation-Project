@@ -2197,7 +2197,6 @@ public class Chessboard : MonoBehaviour
 
     }
 
-
     public string ConvertPositionIntoBoardState(Vector3 currentPos)
     {
         string boardPos = "";
@@ -2271,5 +2270,77 @@ public class Chessboard : MonoBehaviour
         return boardPos;
     }
 
+    public Vector3 ConvertBoardStateIntoPosition(string algebraicNotation)
+    {
+        string[] s = algebraicNotation.Split();
+        Vector3 position = new Vector3(0,0,0);
 
+        if (s[0] == "a")
+        {
+            position += new Vector3(bXMin, 0, 0);
+        }
+        else if (s[0] == "b")
+        {
+            position += new Vector3(bXMin + bXSpace, 0, 0);
+        }
+        else if (s[0] == "c")
+        {
+            position += new Vector3(bXMin + (2* bXSpace), 0);
+        }
+        else if (s[0] == "d")
+        {
+            position += new Vector3(bXMin + (3 * bXSpace), 0);
+        }
+        else if (s[0] == "e")
+        {
+            position += new Vector3(bXMin + (4 * bXSpace), 0);
+        }
+        else if (s[0] == "f")
+        {
+            position += new Vector3(bXMin + (5 * bXSpace), 0);
+        }
+        else if (s[0] == "g")
+        {
+            position += new Vector3(bXMin + (6 * bXSpace), 0);
+        }
+        else if (s[0] == "h")
+        {
+            position += new Vector3(bXMin + (7 * bXSpace), 0);
+        }
+
+        if (s[1] == "1")
+        {
+            position += new Vector3(0, 0, bZMin);
+        }
+        else if (s[1] == "2")
+        {
+            position += new Vector3(0, 0, bZMin + bZSpace);
+        }
+        else if (s[1] == "3")
+        {
+            position += new Vector3(0, 0, bZMin + (2 * bZSpace));
+        }
+        else if (s[1] == "4")
+        {
+            position += new Vector3(0, 0, bZMin + (3 * bZSpace));
+        }
+        else if (s[1] == "5")
+        {
+            position += new Vector3(0, 0, bZMin + (4 * bZSpace));
+        }
+        else if (s[1] == "6")
+        {
+            position += new Vector3(0, 0, bZMin + (5 * bZSpace));
+        }
+        else if (s[1] == "7")
+        {
+            position += new Vector3(0, 0, bZMin + (6 * bZSpace));
+        }
+        else if (s[1] == "8")
+        {
+            position += new Vector3(0, 0, bZMin + (7 * bZSpace));
+        }
+
+        return position;
+    }
 }
