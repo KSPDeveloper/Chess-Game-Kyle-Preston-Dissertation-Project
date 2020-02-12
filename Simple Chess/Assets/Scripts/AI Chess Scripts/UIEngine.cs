@@ -4,7 +4,7 @@ using UnityEngine;
 using TMPro;
 public class UIEngine : MonoBehaviour
 {
-    public bool playerSelectedWhite;
+    public static bool playerSelectedWhite;
     public Camera transitionCamera;
     public bool cameraFocusWhite = true;
     bool isCameraMoving = false;
@@ -29,8 +29,6 @@ public class UIEngine : MonoBehaviour
     {
         ChessboardRef = FindObjectOfType<Chessboard>();
         StockfishRef = FindObjectOfType<Stockfish>();
-        UpdateUI();
-        playerSelectedWhite = true;
         //setCameraPosition
         if (playerSelectedWhite == true)
         {
@@ -42,10 +40,12 @@ public class UIEngine : MonoBehaviour
             transitionCamera.transform.localPosition = new Vector3(86.6f, 200.9f, -47f);
             transitionCamera.transform.localRotation = Quaternion.Euler(60.58f, 180f, 0f);
         }
+        UpdateUI();
     }
 
     void Update()
     {
+        //Players turn
         if (playerSelectedWhite == true && ChessboardRef.whiteToMove == true)
         {
             if (Input.GetMouseButtonDown(0))
@@ -98,7 +98,7 @@ public class UIEngine : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -190,7 +190,7 @@ public class UIEngine : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -284,12 +284,53 @@ public class UIEngine : MonoBehaviour
         // Run Stockfish
         else if (playerSelectedWhite == false && ChessboardRef.whiteToMove == true)
         {
-            playerTurn.text = "AI is Thinking";
-
             string bestmove = StockfishRef.GetStockfishCommands(ChessboardRef.GetBoardState());
 
+            string[] characters = new string[bestmove.Length];
+            for (int i = 0; i < characters.Length; i++)
+            {
+                characters[i] = bestmove[i].ToString();
+            }
+
+            //Debug.Log(characters[0] + characters[1] + ": " + ChessboardRef.ConvertBoardStateIntoPosition(characters[0] + characters[1]).ToString("f2"));
+            //Debug.Log(characters[2] + characters[3] + ": " + ChessboardRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]).ToString("f2"));
+
+            //Get the positons
+            Debug.Log(bestmove);
+
+            GameObject selectedPiece = ChessboardRef.piecePosition[ChessboardRef.ConvertBoardStateIntoPosition(characters[0] + characters[1])];
+            Debug.Log("Current Piece: " + selectedPiece.transform.localPosition.ToString("f2"));
+
+            Vector3 newPositon = ChessboardRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]);
+            Debug.Log("New Position: " + newPositon);
+
+            #region MovePieces
             ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove;
+            //If it contains a piece
+            if (ChessboardRef.piecePosition.ContainsKey(newPositon))
+            {
+                TakePieceCheck(ChessboardRef.piecePosition[newPositon], new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
+                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);
+                selectedPiece.transform.localPosition = newPositon; // moves the piece into the correct position.
+                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece);
+            }
+
+            //doesn't contain a piece
+            else
+            {
+                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);
+                selectedPiece.transform.localPosition = newPositon;
+                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece);
+            }
+            ChessboardRef.check = false; // Resets Check
+            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+            ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+            ChessboardRef.MoveCounter(ref ChessboardRef.currentMove);
+            UpdateUI();
+            #endregion
         }
+
+        //Player's turn
         else if (playerSelectedWhite == false && ChessboardRef.whiteToMove == false)
         {
             if (Input.GetMouseButtonDown(0))
@@ -342,7 +383,7 @@ public class UIEngine : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -434,7 +475,7 @@ public class UIEngine : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessboardRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -528,11 +569,52 @@ public class UIEngine : MonoBehaviour
         //Run Stockfish
         else if (playerSelectedWhite == true && ChessboardRef.whiteToMove == false)
         {
-            playerTurn.text = "AI is Thinking";
 
             string bestmove = StockfishRef.GetStockfishCommands(ChessboardRef.GetBoardState());
 
+            string[] characters = new string[bestmove.Length];
+            for (int i = 0; i < characters.Length; i++)
+            {
+                characters[i] = bestmove[i].ToString();
+            }
+
+            //Debug.Log(characters[0] + characters[1] + ": " + ChessboardRef.ConvertBoardStateIntoPosition(characters[0] + characters[1]).ToString("f2"));
+            //Debug.Log(characters[2] + characters[3] + ": " + ChessboardRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]).ToString("f2"));
+
+            //Get the positons
+            Debug.Log(bestmove);
+
+            GameObject selectedPiece = ChessboardRef.piecePosition[ChessboardRef.ConvertBoardStateIntoPosition(characters[0] + characters[1])];
+            Debug.Log("Current Piece: " + selectedPiece.transform.localPosition.ToString("f2"));
+
+            Vector3 newPositon = ChessboardRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]);
+            Debug.Log("New Position: " + newPositon);
+
+            #region MovePieces
             ChessboardRef.whiteToMove = !ChessboardRef.whiteToMove;
+            //If it contains a piece
+            if (ChessboardRef.piecePosition.ContainsKey(newPositon))
+            {
+                TakePieceCheck(ChessboardRef.piecePosition[newPositon], new Vector3(0, 0, 0)); //checks whether there is a takeable piece.
+                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);
+                selectedPiece.transform.localPosition = newPositon; // moves the piece into the correct position.
+                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece);
+            }
+
+            //doesn't contain a piece
+            else
+            {
+                ChessboardRef.piecePosition.Remove(selectedPiece.transform.localPosition);
+                selectedPiece.transform.localPosition = newPositon;
+                ChessboardRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece);
+            }
+
+            ChessboardRef.check = false; // Resets Check
+            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+            ChessboardRef.CheckMateCheck(ChessboardRef.numberOfPossibleMovesW, ChessboardRef.numberOfPossibleMovesB);
+            ChessboardRef.MoveCounter(ref ChessboardRef.currentMove);
+            UpdateUI();
+            #endregion
         }
     }
 
@@ -625,6 +707,10 @@ public class UIEngine : MonoBehaviour
 
     void AllPossibleMoves(ref List<Vector3> WPosP, ref List<Vector3> BPosP, ref List<Vector3> pWpieces, ref List<Vector3> pBPieces)
     {
+        TempList1.Clear();
+        TempList2.Clear();
+        List<Vector3> tempDiagonalSpacesW = new List<Vector3>();
+        List<Vector3> tempDiagonalSpacesB = new List<Vector3>();
         ChessboardRef.pinnedPiecePath.Clear();
         ChessboardRef.numberOfPossibleMovesW = 0;
         ChessboardRef.numberOfPossibleMovesB = 0;
@@ -667,12 +753,12 @@ public class UIEngine : MonoBehaviour
             }
         }
 
-        // If white to move, calcualte blacks moves first for chance of check.
+        // If white to move, calculate blacks moves first for chance of check.
         if (ChessboardRef.whiteToMove)
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP, ref tempDiagonalSpacesB);
             }
             if (ChessboardRef.piecesPuttingKingInCheck > 0)
             {
@@ -681,7 +767,7 @@ public class UIEngine : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP, ref tempDiagonalSpacesW);
             }
         }
 
@@ -689,7 +775,7 @@ public class UIEngine : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
+                ChessboardRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP, ref tempDiagonalSpacesW);
             }
 
             if (ChessboardRef.piecesPuttingKingInCheck > 0)
@@ -700,12 +786,15 @@ public class UIEngine : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
+                ChessboardRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP, ref tempDiagonalSpacesB);
             }
         }
-        
+
         //Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
         //Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
+
+        WPosP.AddRange(tempDiagonalSpacesW);
+        BPosP.AddRange(tempDiagonalSpacesB);
     }
 
     void highlightPossibleMoves(List<Vector3> lightlist, List<Vector3> castlingList, List<Vector3> enPassantLL)
@@ -815,14 +904,24 @@ public class UIEngine : MonoBehaviour
             playerTurn.text = "Check";
         }
 
-        else if (ChessboardRef.whiteToMove)
+       else if (playerSelectedWhite == true && ChessboardRef.whiteToMove == true)
         {
-            playerTurn.text = "White to move";
+            playerTurn.text = "Your turn";
+        }
+        
+        else if (playerSelectedWhite == false && ChessboardRef.whiteToMove == false)
+        {
+            playerTurn.text = "Your turn";
         }
 
-        else if (!ChessboardRef.whiteToMove)
+        else if (playerSelectedWhite == false && ChessboardRef.whiteToMove == true)
         {
-            playerTurn.text = "Black to move";
+            playerTurn.text = "AI Thinking";
+        }
+
+        else if (playerSelectedWhite == true && ChessboardRef.whiteToMove == false)
+        {
+            playerTurn.text = "AI Thinking";
         }
     }
 }

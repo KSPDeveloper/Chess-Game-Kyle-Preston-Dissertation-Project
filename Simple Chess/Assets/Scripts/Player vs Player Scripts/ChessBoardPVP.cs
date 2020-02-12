@@ -133,11 +133,11 @@ public class ChessBoardPVP : MonoBehaviour
         #endregion
     }
 
-    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL)
+    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
-            PawnMovement(selectedPiece, ref lightList, ref enPassantL, ref temporaryEnPassantPieceRefs);
+            PawnMovement(selectedPiece, ref lightList, ref enPassantL, ref temporaryEnPassantPieceRefs, ref DiagonalSpaces);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Rook")
@@ -165,7 +165,7 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces)
     {
         enPassantL.Clear();
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
@@ -227,6 +227,7 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                             }
                         }
+                        diagonalSpaces.Add(tempMove);
 
                         //Check for En Passant
                         tempMove = startingPos; //resets tempUp
@@ -298,6 +299,7 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                             }
                         }
+                        diagonalSpaces.Add(tempMove);
 
                         //Check for En Passant
                         tempMove = startingPos; //resets tempUp
@@ -318,7 +320,7 @@ public class ChessBoardPVP : MonoBehaviour
                 }
             }
 
-            if (selectedPiece.GetComponent<Track>().pinned == true) // Can only move forwards or take a piece that is pinning it
+            else if (selectedPiece.GetComponent<Track>().pinned == true) // Can only move forwards or take a piece that is pinning it
             {
                 if (selectedPiece.tag == "White")
                 {
@@ -356,6 +358,7 @@ public class ChessBoardPVP : MonoBehaviour
                             lightList.Add(tempMove);
                             numberOfPossibleMovesW++;
                         }
+                        diagonalSpaces.Add(tempMove);
                     }
                 }
 
@@ -395,12 +398,13 @@ public class ChessBoardPVP : MonoBehaviour
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
+                        diagonalSpaces.Add(tempMove);
                     }
                 }
             }
         }
 
-        if (check == true)
+        else if (check == true)
         {
             if (selectedPiece.GetComponent<Track>().pinned == false) //Can only move to block or take a piece pinning.
             {
@@ -521,7 +525,7 @@ public class ChessBoardPVP : MonoBehaviour
                 }
             }
 
-            if (selectedPiece.GetComponent<Track>().pinned == true) // can't move
+            else if (selectedPiece.GetComponent<Track>().pinned == true) // can't move
             {
 
             }
@@ -1676,7 +1680,7 @@ public class ChessBoardPVP : MonoBehaviour
                             //Protected Piece
                             if (piecePosition[tempMove].tag == "Black")
                             {
-                                pWPieces.Add(tempMove);
+                                pBPieces.Add(tempMove);
                             }
                         }
                     }
@@ -1766,7 +1770,7 @@ public class ChessBoardPVP : MonoBehaviour
                             //Protected Piece
                             if (piecePosition[tempMove].tag == "Black")
                             {
-                                pWPieces.Add(tempMove);
+                                pBPieces.Add(tempMove);
                             }
                         }
                     }
@@ -1785,14 +1789,14 @@ public class ChessBoardPVP : MonoBehaviour
     {
         if (whiteToMove)
         {
-            if (numberOfPossibleMovesW == 0)
+            if (check == true && numberOfPossibleMovesW == 0)
             {
                 checkMate = true;
             }
         }
         else
         {
-            if (numberOfPossibleMovesB == 0)
+            if (check == true && numberOfPossibleMovesB == 0)
             {
                 checkMate = true;
             }

@@ -8,7 +8,6 @@ using System.Linq;
 
 public class Stockfish : MonoBehaviour
 {
-    Process p;
     string bestMoveInAlgebraicNotation;
 
     void Start()
@@ -19,14 +18,12 @@ public class Stockfish : MonoBehaviour
     public string GetStockfishCommands(string forsythEdwardsNotationString)
     {
         return GetBestMove(forsythEdwardsNotationString);
-
     }
-
 
     public string GetBestMove(string forsythEdwardsNotationString)
     {
         var p = new Process();
-        p.StartInfo.FileName = "C:/Users/kspre/Desktop/stockfish-10-win/stockfish-10-win/Windows/stockfish_10_x64.exe";
+        p.StartInfo.FileName = Application.dataPath + "/stockfish-11-win/Windows/stockfish_20011801_32bit.exe";
         p.StartInfo.UseShellExecute = false;
         p.StartInfo.RedirectStandardInput = true;
         p.StartInfo.RedirectStandardOutput = true;
@@ -45,12 +42,8 @@ public class Stockfish : MonoBehaviour
                 break;
             }
         }
-       
-
 
         string processString = "go movetime 5000";
-
-
         p.StandardInput.WriteLine(processString);
 
         while ((standard_output = p.StandardOutput.ReadLine()) != null)
@@ -63,19 +56,6 @@ public class Stockfish : MonoBehaviour
             }
         }
         return bestMoveInAlgebraicNotation;
-    }
-
-
-
-    IEnumerator WaitTimeRet(float waitTime)
-    {
-
-        yield return new WaitForSeconds(waitTime);
-
-        string bestMoveInAlgebraicNotation = p.StandardOutput.ReadLine();
-
-        
-
     }
 }
 

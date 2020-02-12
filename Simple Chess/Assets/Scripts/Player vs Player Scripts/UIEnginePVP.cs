@@ -39,7 +39,7 @@ public class UIEnginePVP : MonoBehaviour
     {
         if (isCameraMoving == false)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !ChessBoardPVPRef.checkMate)
             {
                 RaycastHit hitInfo = new RaycastHit();
                 bool hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hitInfo, Mathf.Infinity);
@@ -79,7 +79,7 @@ public class UIEnginePVP : MonoBehaviour
                             DestroyAndClearLights();
                             ChessBoardPVPRef.MoveCounter(ref ChessBoardPVPRef.currentMove);
 
-                            Debug.Log(ChessBoardPVPRef.GetBoardState());
+                           // Debug.Log(ChessBoardPVPRef.GetBoardState());
                         }
                     }
 
@@ -98,7 +98,7 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -206,7 +206,7 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 DestroyAndClearLights();
                                 selectedPiece = hitInfo.transform.gameObject;
-                                ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList);
+                                ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2);
                                 if (lightList.Count != 0)
                                 {
                                     highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -288,6 +288,7 @@ public class UIEnginePVP : MonoBehaviour
                         lightList.Clear();
                         castlingLightList.Clear();
                     }
+                    
                     else
                     {
                         DestroyAndClearLights();
@@ -395,6 +396,8 @@ public class UIEnginePVP : MonoBehaviour
 
     void AllPossibleMoves(ref List<Vector3> WPosP, ref List<Vector3> BPosP, ref List<Vector3> pWpieces, ref List<Vector3> pBPieces)
     {
+        List<Vector3> tempDiagonalSpacesW = new List<Vector3>();
+        List<Vector3> tempDiagonalSpacesB = new List<Vector3>();
         ChessBoardPVPRef.pinnedPiecePath.Clear();
         ChessBoardPVPRef.numberOfPossibleMovesW = 0;
         ChessBoardPVPRef.numberOfPossibleMovesB = 0;
@@ -442,7 +445,7 @@ public class UIEnginePVP : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP, ref tempDiagonalSpacesB);
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
             {
@@ -451,7 +454,7 @@ public class UIEnginePVP : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP, ref tempDiagonalSpacesW);
             }
         }
 
@@ -459,7 +462,7 @@ public class UIEnginePVP : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref WPosP, ref pWpieces, ref pBPieces, ref WPosP, ref WPosP, ref tempDiagonalSpacesW);
             }
 
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
@@ -470,12 +473,14 @@ public class UIEnginePVP : MonoBehaviour
 
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref BPosP, ref pWpieces, ref pBPieces, ref BPosP, ref BPosP, ref tempDiagonalSpacesB);
             }
         }
 
         //Debug.Log("Number of Possible Moves White: " + ChessboardRef.numberOfPossibleMovesW);
         //Debug.Log("Number of Possible Moves Black: " + ChessboardRef.numberOfPossibleMovesB);
+        WPosP.AddRange(tempDiagonalSpacesW);
+        BPosP.AddRange(tempDiagonalSpacesB);
     }
 
     void highlightPossibleMoves(List<Vector3> lightlist, List<Vector3> castlingList, List<Vector3> enPassantLL)

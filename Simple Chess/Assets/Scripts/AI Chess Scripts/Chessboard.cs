@@ -134,11 +134,11 @@ public class Chessboard : MonoBehaviour
         #endregion
     }
 
-    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL)
+    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> diagonalSpaces)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
-            PawnMovement(selectedPiece, ref lightList, ref enPassantL, ref temporaryEnPassantPieceRefs);
+            PawnMovement(selectedPiece, ref lightList, ref enPassantL, ref temporaryEnPassantPieceRefs, ref diagonalSpaces);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Rook")
@@ -166,7 +166,7 @@ public class Chessboard : MonoBehaviour
         }
     }
 
-    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces)
     {
         enPassantL.Clear();
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
@@ -228,7 +228,7 @@ public class Chessboard : MonoBehaviour
                                 }
                             }
                         }
-
+                        diagonalSpaces.Add(tempMove);
                         //Check for En Passant
                         tempMove = startingPos; //resets tempUp
                         tempMove += dir;
@@ -299,6 +299,7 @@ public class Chessboard : MonoBehaviour
                                 }
                             }
                         }
+                        diagonalSpaces.Add(tempMove);
 
                         //Check for En Passant
                         tempMove = startingPos; //resets tempUp
@@ -319,7 +320,7 @@ public class Chessboard : MonoBehaviour
                 }
             }
 
-            if (selectedPiece.GetComponent<Track>().pinned == true) // Can only move forwards or take a piece that is pinning it
+            else if (selectedPiece.GetComponent<Track>().pinned == true) // Can only move forwards or take a piece that is pinning it
             {
                 if (selectedPiece.tag == "White")
                 {
@@ -357,6 +358,7 @@ public class Chessboard : MonoBehaviour
                             lightList.Add(tempMove);
                             numberOfPossibleMovesW++;
                         }
+                        diagonalSpaces.Add(tempMove);
                     }
                 }
 
@@ -396,12 +398,13 @@ public class Chessboard : MonoBehaviour
                             numberOfPossibleMovesB++;
                             lightList.Add(tempMove);
                         }
+                        diagonalSpaces.Add(tempMove);
                     }
                 }
             }
         }
 
-        if (check == true)
+        else if (check == true)
         {
             if (selectedPiece.GetComponent<Track>().pinned == false) //Can only move to block or take a piece pinning.
             {
@@ -522,7 +525,7 @@ public class Chessboard : MonoBehaviour
                 }
             }
 
-            if (selectedPiece.GetComponent<Track>().pinned == true) // can't move
+            else if (selectedPiece.GetComponent<Track>().pinned == true) // can't move
             {
 
             }
@@ -1042,7 +1045,7 @@ public class Chessboard : MonoBehaviour
                 }
             }
 
-            if (check == true)
+            else if (check == true)
             {
                 if (selectedPiece.tag == "White")
                 {
@@ -1677,7 +1680,7 @@ public class Chessboard : MonoBehaviour
                             //Protected Piece
                             if (piecePosition[tempMove].tag == "Black")
                             {
-                                pWPieces.Add(tempMove);
+                                pBPieces.Add(tempMove);
                             }
                         }
                     }
@@ -1767,7 +1770,7 @@ public class Chessboard : MonoBehaviour
                             //Protected Piece
                             if (piecePosition[tempMove].tag == "Black")
                             {
-                                pWPieces.Add(tempMove);
+                                pBPieces.Add(tempMove);
                             }
                         }
                     }
@@ -1786,15 +1789,15 @@ public class Chessboard : MonoBehaviour
     {
         if (whiteToMove)
         {
-            if (numberOfPossibleMovesW == 0)
+            if (check == true && numberOfPossibleMovesW == 0)
             {
                 checkMate = true;
             }
         }
         else
         {
-            if (numberOfPossibleMovesB == 0)
-            {
+            if (check == true && numberOfPossibleMovesB == 0)
+            { 
                 checkMate = true;
             }
         }
@@ -2092,7 +2095,7 @@ public class Chessboard : MonoBehaviour
             {
                 if (piece.Value.GetComponent<Track>().enPassant == true)
                 {
-                    Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
+                    //Debug.Log("en passant: " + piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
                     fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition - difference) + " ";
                     enPassantFound = true;
                     break;
@@ -2102,7 +2105,7 @@ public class Chessboard : MonoBehaviour
             {
                 if (piece.Value.GetComponent<Track>().enPassant == true)
                 {
-                    Debug.Log(piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
+                    //Debug.Log("en passant: " + piece.Value.tag + piece.Value.transform.localPosition.ToString("F2"));
                     fenString += " " + ConvertPositionIntoBoardState(piece.Value.transform.localPosition + difference) + " ";
                     enPassantFound = true;
                     break;
@@ -2272,75 +2275,86 @@ public class Chessboard : MonoBehaviour
 
     public Vector3 ConvertBoardStateIntoPosition(string algebraicNotation)
     {
-        string[] s = algebraicNotation.Split();
+        Debug.Log(algebraicNotation);
+        string[] characters = new string[algebraicNotation.Length];
+        for (int i = 0; i < algebraicNotation.Length; i++)
+        {
+            characters[i] = algebraicNotation[i].ToString();
+        }
+
+        string l1 = characters[0];
+        string l2 = characters[1];
+        Debug.Log("l1: " + l1);
+        Debug.Log("l2: " + l2);
         Vector3 position = new Vector3(0,0,0);
 
-        if (s[0] == "a")
+        if (l1 == "a")
         {
             position += new Vector3(bXMin, 0, 0);
         }
-        else if (s[0] == "b")
+        else if (l1 == "b")
         {
             position += new Vector3(bXMin + bXSpace, 0, 0);
         }
-        else if (s[0] == "c")
+        else if (l1 == "c")
         {
             position += new Vector3(bXMin + (2* bXSpace), 0);
         }
-        else if (s[0] == "d")
+        else if (l1 == "d")
         {
             position += new Vector3(bXMin + (3 * bXSpace), 0);
         }
-        else if (s[0] == "e")
+        else if (l1 == "e")
         {
             position += new Vector3(bXMin + (4 * bXSpace), 0);
         }
-        else if (s[0] == "f")
+        else if (l1 == "f")
         {
             position += new Vector3(bXMin + (5 * bXSpace), 0);
         }
-        else if (s[0] == "g")
+        else if (l1 == "g")
         {
             position += new Vector3(bXMin + (6 * bXSpace), 0);
         }
-        else if (s[0] == "h")
+        else if (l1 == "h")
         {
             position += new Vector3(bXMin + (7 * bXSpace), 0);
         }
 
-        if (s[1] == "1")
+        if (l2 == "1")
         {
             position += new Vector3(0, 0, bZMin);
         }
-        else if (s[1] == "2")
+        else if (l2 == "2")
         {
             position += new Vector3(0, 0, bZMin + bZSpace);
         }
-        else if (s[1] == "3")
+        else if (l2 == "3")
         {
             position += new Vector3(0, 0, bZMin + (2 * bZSpace));
         }
-        else if (s[1] == "4")
+        else if (l2 == "4")
         {
             position += new Vector3(0, 0, bZMin + (3 * bZSpace));
         }
-        else if (s[1] == "5")
+        else if (l2 == "5")
         {
             position += new Vector3(0, 0, bZMin + (4 * bZSpace));
         }
-        else if (s[1] == "6")
+        else if (l2 == "6")
         {
             position += new Vector3(0, 0, bZMin + (5 * bZSpace));
         }
-        else if (s[1] == "7")
+        else if (l2 == "7")
         {
             position += new Vector3(0, 0, bZMin + (6 * bZSpace));
         }
-        else if (s[1] == "8")
+        else if (l2 == "8")
         {
             position += new Vector3(0, 0, bZMin + (7 * bZSpace));
         }
 
+        Debug.Log(position.ToString("f2"));
         return position;
     }
 }
