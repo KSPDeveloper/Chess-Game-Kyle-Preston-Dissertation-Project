@@ -9,9 +9,10 @@ using System.Linq;
 public class Stockfish : MonoBehaviour
 {
     string bestMoveInAlgebraicNotation;
-
+    public static int skillLevelValue =10;
     void Start()
     {
+        //rnbq1rk1/pp4pp/1np5/2bP1pN1/2P1p3/2N5/PPB2PPP/R1BQK2R w KQ - 0 1 (Example of Castling)
         //UnityEngine.Debug.Log(GetBestMove("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"));
     }
 
@@ -22,6 +23,7 @@ public class Stockfish : MonoBehaviour
 
     public string GetBestMove(string forsythEdwardsNotationString)
     {
+        UnityEngine.Debug.Log(forsythEdwardsNotationString);
         var p = new Process();
         p.StartInfo.FileName = Application.dataPath + "/stockfish-11-win/Windows/stockfish_20011801_32bit.exe";
         p.StartInfo.UseShellExecute = false;
@@ -30,19 +32,21 @@ public class Stockfish : MonoBehaviour
         p.StartInfo.CreateNoWindow = true;
         p.Start();
         string setupString = "position fen " + forsythEdwardsNotationString;
-        p.StandardInput.WriteLine("uci");
-        //Waits for the Console to return "uciok"
         string standard_output;
+        string setOptionLevel = "setoption name skill level value "+ skillLevelValue.ToString();
 
+        #region Engine Set Up
+        p.StandardInput.WriteLine("uci");
         while ((standard_output = p.StandardOutput.ReadLine()) != null)
         {
             if (standard_output.Contains("uciok"))
             {
+                p.StandardInput.WriteLine(setOptionLevel);
                 p.StandardInput.WriteLine(setupString);
                 break;
             }
         }
-
+        #endregion
         string processString = "go movetime 5000";
         p.StandardInput.WriteLine(processString);
 

@@ -523,3 +523,5 @@ D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Disse
 D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple Chess\Temp\bin\Debug\UnityEngine.WindModule.xml
 D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple Chess\Temp\bin\Debug\UnityEngine.XRModule.xml
 D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple Chess\obj\Debug\Assembly-CSharp.csproj.CopyComplete
+D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple Chess\Temp\bin\Debug\Unity.2D.Sprite.Editor.dll
+D:\Year 3\3D Chess Game Dissertation Project\Unity\Chess-Game-Kyle-Preston-Dissertation-Project\Simple Chess\Temp\bin\Debug\Unity.2D.Sprite.Editor.pdb

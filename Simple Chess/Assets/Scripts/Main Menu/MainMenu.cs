@@ -15,8 +15,8 @@ public class MainMenu : MonoBehaviour
 
     public void Play()
     {
+        UIEnginePVP.AIGame = false;
         SceneManager.LoadScene("Player vs Player");
-    
     }
 
     public void PlayAgainstAI()
@@ -28,13 +28,15 @@ public class MainMenu : MonoBehaviour
     public void WhiteButton()
     {
         UIEngine.playerSelectedWhite = true;
-        SceneManager.LoadScene("AI Game");
+        UIEnginePVP.AIGame = true;
+        SceneManager.LoadScene("Player vs Player");
     }
 
     public void BlackButton()
     {
         UIEngine.playerSelectedWhite = false;
-        SceneManager.LoadScene("AI Game");
+        UIEnginePVP.AIGame = true;
+        SceneManager.LoadScene("Player vs Player");
     }
 
 

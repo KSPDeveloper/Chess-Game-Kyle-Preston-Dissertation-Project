@@ -999,6 +999,7 @@ GameObject:
   - component: {fileID: 1199316341}
   - component: {fileID: 1199316342}
   - component: {fileID: 1199316340}
+  - component: {fileID: 1199316343}
   m_Layer: 0
   m_Name: Game Controller
   m_TagString: Untagged
@@ -1022,8 +1023,6 @@ MonoBehaviour:
   fullMoves: 1
   currentMove: 0
   checkMate: 0
-  numberOfPossibleMovesB: 0
-  numberOfPossibleMovesW: 0
   UIEnginePVPReference: {fileID: 0}
   whiteToMove: 1
   check: 0
@@ -1111,9 +1110,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c5d784c74d8e0147861f7b151e04385, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transitionCamera: {fileID: 1211064163}
+  enPassantGORef: {fileID: 0}
   cameraFocusWhite: 1
+  lightList: []
+  castlingLightList: []
+  EnPassantLightList: []
+  whitePossiblePositions: []
+  blackPossiblePositions: []
+  ProtectedWhitePieces: []
+  ProtectedBlackPieces: []
+  transitionCamera: {fileID: 1211064163}
   playerTurn: {fileID: 907800354}
+  wQueen2D: {fileID: 21300000, guid: 8dde74c05b5674a6b96e6c855da9dc82, type: 3}
+  wRook2D: {fileID: 21300000, guid: 49084320a93464c4aac4806e7b02323d, type: 3}
+  wBishop2D: {fileID: 21300000, guid: 5c87fe55678ba447eb605e8ee793c858, type: 3}
+  wKnight2D: {fileID: 21300000, guid: b6bd772b73a504ab5a27db2031715b95, type: 3}
+  bQueen2D: {fileID: 21300000, guid: 5bf33171a7890405fadd9ba6c341d086, type: 3}
+  bRook2D: {fileID: 21300000, guid: 92aee0fb85e2f4c2f9f3a34e83522ec3, type: 3}
+  bBishop2D: {fileID: 21300000, guid: ed72f49bf7af8450ea16c4af1a47f9fe, type: 3}
+  bKnight2D: {fileID: 21300000, guid: 7ae06a498d47544d7a75ddfdf1ada9d4, type: 3}
   lights: []
   castlingLights: []
   enPassantLights:
@@ -1131,21 +1146,18 @@ MonoBehaviour:
   rookButton: {fileID: 718379558}
   knightButton: {fileID: 1703218012}
   bishopButton: {fileID: 421735126}
-  wQueen2D: {fileID: 21300000, guid: 8dde74c05b5674a6b96e6c855da9dc82, type: 3}
-  wRook2D: {fileID: 21300000, guid: 49084320a93464c4aac4806e7b02323d, type: 3}
-  wBishop2D: {fileID: 21300000, guid: 5c87fe55678ba447eb605e8ee793c858, type: 3}
-  wKnight2D: {fileID: 21300000, guid: b6bd772b73a504ab5a27db2031715b95, type: 3}
-  bQueen2D: {fileID: 21300000, guid: 5bf33171a7890405fadd9ba6c341d086, type: 3}
-  bRook2D: {fileID: 21300000, guid: 92aee0fb85e2f4c2f9f3a34e83522ec3, type: 3}
-  bBishop2D: {fileID: 21300000, guid: ed72f49bf7af8450ea16c4af1a47f9fe, type: 3}
-  bKnight2D: {fileID: 21300000, guid: 7ae06a498d47544d7a75ddfdf1ada9d4, type: 3}
-  lightList: []
-  castlingLightList: []
-  EnPassantLightList: []
-  whitePossiblePositions: []
-  blackPossiblePositions: []
-  ProtectedWhitePieces: []
-  ProtectedBlackPieces: []
+--- !u!114 &1199316343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1199316339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9a2d786aebf9d74aba260889fa120ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1211064159
 GameObject:
   m_ObjectHideFlags: 0

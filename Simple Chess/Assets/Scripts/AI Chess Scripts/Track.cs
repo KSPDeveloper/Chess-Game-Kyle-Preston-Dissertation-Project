@@ -8,4 +8,5 @@ public class Track : MonoBehaviour
     public bool pinned = false;
     public bool enPassant = false;
     public int enPassantRound = 0;
+    public Vector3 EnPassantPosition;
 }
