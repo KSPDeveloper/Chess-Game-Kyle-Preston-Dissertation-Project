@@ -7,7 +7,7 @@ public class UIEnginePVP : MonoBehaviour
 {
     #region AIGame Global Variables
     public static bool AIGame = true;
-    public static bool playerSelectedWhite = true;
+    public static bool playerSelectedWhite = false;
     bool AIThinking;
     public GameObject enPassantGORef;
     #endregion
@@ -84,7 +84,7 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 selectedPiece.GetComponent<Track>().startingPosition = false;
                             }
-                            EnPassantCheck(selectedPiece, hitInfo.transform.gameObject);
+                            EnPassantCheck(selectedPiece, hitInfo.transform.localPosition);
                             ChessBoardPVPRef.check = false; // Resets Check
                             ChessBoardPVPRef.whiteToMove = !ChessBoardPVPRef.whiteToMove; //alternates between white and black to move
                             TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
@@ -361,7 +361,7 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 selectedPiece.GetComponent<Track>().startingPosition = false;
                             }
-                            EnPassantCheck(selectedPiece, hitInfo.transform.gameObject);
+                            EnPassantCheck(selectedPiece, hitInfo.transform.localPosition);
                             ChessBoardPVPRef.check = false; // Resets Check
                             ChessBoardPVPRef.whiteToMove = !ChessBoardPVPRef.whiteToMove; //alternates between white and black to move
                             TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
@@ -626,7 +626,7 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 selectedPiece.GetComponent<Track>().startingPosition = false;
                             }
-                            EnPassantCheck(selectedPiece, hitInfo.transform.gameObject);
+                            EnPassantCheck(selectedPiece, hitInfo.transform.localPosition);
                             ChessBoardPVPRef.check = false; // Resets Check
                             ChessBoardPVPRef.whiteToMove = !ChessBoardPVPRef.whiteToMove; //alternates between white and black to move
                             TakePieceCheck(hitInfo.transform.gameObject, new Vector3(0, -0.4f, 0)); //checks whether there is a takeable piece.
@@ -859,7 +859,6 @@ public class UIEnginePVP : MonoBehaviour
                 i++;
             }
         }
-
         if (Input.GetKeyDown(KeyCode.W))
         {
             int i = 0;
@@ -867,6 +866,17 @@ public class UIEnginePVP : MonoBehaviour
             {
                 Debug.Log("Black Position " + i + ": " + V.ToString("f2"));
                 i++;
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            if (enPassantGORef != null)
+            {
+                Debug.Log("Y");
+            }
+            else
+            {
+                Debug.Log("N");
             }
         }
     }
@@ -1166,13 +1176,13 @@ public class UIEnginePVP : MonoBehaviour
         }
     }
 
-    void EnPassantCheck(GameObject selectedPiece, GameObject hitInfo)
+    void EnPassantCheck(GameObject selectedPiece, Vector3 newPosition)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
             if (selectedPiece.transform.tag == "White")
             {
-                if (selectedPiece.transform.localPosition.z == (hitInfo.transform.localPosition.z - (2 * ChessBoardPVPRef.bZSpace)))
+                if (selectedPiece.transform.localPosition.z == (newPosition.z - (2 * ChessBoardPVPRef.bZSpace)))
                 {
                     selectedPiece.GetComponent<Track>().enPassant = true;
                     selectedPiece.GetComponent<Track>().enPassantRound = ChessBoardPVPRef.currentMove + 1;
@@ -1180,7 +1190,7 @@ public class UIEnginePVP : MonoBehaviour
             }
             else if (selectedPiece.transform.tag == "Black")
             {
-                if (selectedPiece.transform.localPosition.z == (hitInfo.transform.localPosition.z + (2 * ChessBoardPVPRef.bZSpace)))
+                if (selectedPiece.transform.localPosition.z == (newPosition.z + (2 * ChessBoardPVPRef.bZSpace)))
                 {
                     selectedPiece.GetComponent<Track>().enPassant = true;
                     selectedPiece.GetComponent<Track>().enPassantRound = ChessBoardPVPRef.currentMove + 1;
@@ -1500,6 +1510,7 @@ public class UIEnginePVP : MonoBehaviour
                 {
                     if (newPosition == enPassantGORef.GetComponent<Track>().EnPassantPosition)
                     {
+                        Debug.Log("V");
                         TakePieceCheck(enPassantGORef, new Vector3(0, 0, 0));
                         selPiece.transform.localPosition = newPosition;
                         ChessBoardPVPRef.piecePosition.Add(selPiece.transform.localPosition, selPiece);
@@ -1522,6 +1533,7 @@ public class UIEnginePVP : MonoBehaviour
                     }
                     else
                     {
+                        EnPassantCheck(selPiece, newPosition);
                         selPiece.transform.localPosition = newPosition;
                         ChessBoardPVPRef.piecePosition.Add(selPiece.transform.localPosition, selPiece);
                     }

@@ -132,6 +132,17 @@ public class ChessBoardPVP : MonoBehaviour
         #endregion
     }
 
+    void CreateBoard(string fen)
+    {
+        string[] fenRows, fenText;
+        fenRows = fen.Split('/');
+
+        for (int i = 0; i < fenRows.Length; i++)
+        {
+            fenText = fenRows[i].Split();
+        }
+    }
+
     public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces, ref int nOMW, ref int nOMB)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
