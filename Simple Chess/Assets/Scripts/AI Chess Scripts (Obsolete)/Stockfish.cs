@@ -40,7 +40,7 @@ public class Stockfish : MonoBehaviour
 
     public string GetBestMove(string forsythEdwardsNotationString)
     {
-        UnityEngine.Debug.Log(forsythEdwardsNotationString);
+        //UnityEngine.Debug.Log(forsythEdwardsNotationString);
         var p = new Process();
         p.StartInfo.FileName = Application.dataPath + "/stockfish-11-win/Windows/stockfish_20011801_32bit.exe";
         p.StartInfo.UseShellExecute = false;

@@ -143,11 +143,11 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces, ref int nOMW, ref int nOMB)
+    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces, ref int nOMW, ref int nOMB, ref List<Vector3> takeablePositions)
     {
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
-            PawnMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref enPassantL, ref temporaryEnPassantPieceRefs, ref DiagonalSpaces, ref nOMW, ref nOMB);
+            PawnMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref enPassantL, ref temporaryEnPassantPieceRefs, ref DiagonalSpaces, ref nOMW, ref nOMB, ref takeablePositions);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Rook")
@@ -175,7 +175,7 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces, ref int nOMW, ref int nOMB)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces, ref int nOMW, ref int nOMB, ref List<Vector3> takeablePositions)
     {
         enPassantL.Clear();
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
@@ -232,6 +232,7 @@ public class ChessBoardPVP : MonoBehaviour
 
                                 else
                                 {
+                                    takeablePositions.Add(tempMove);
                                     nOMW++;
                                     lightList.Add(tempMove);
                                 }
@@ -308,6 +309,7 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                                 else
                                 {
+                                    takeablePositions.Add(tempMove);
                                     lightList.Add(tempMove);
                                     nOMB++;
                                 }
@@ -610,7 +612,6 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                Debug.Log("Accessed");
                                 nOMB++;
                                 lightList.Add(tempMove);
                             }
@@ -619,7 +620,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            Debug.Log("Accessed2");
                             nOMB++;
                             lightList.Add(tempMove);
                         }
@@ -959,7 +959,7 @@ public class ChessBoardPVP : MonoBehaviour
             {
                 if (selectedPiece.tag == "White")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackPossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
                         nOMW++;
                         lightList.Add(tempMove);
@@ -982,7 +982,7 @@ public class ChessBoardPVP : MonoBehaviour
 
                 if (selectedPiece.tag == "Black")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whitePossiblePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
                         nOMB++;
                         lightList.Add(tempMove);
@@ -1008,9 +1008,9 @@ public class ChessBoardPVP : MonoBehaviour
             {
                 if (selectedPiece.tag == "White")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackPossiblePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
-                        nOMB++;
+                        nOMW++;
                         lightList.Add(tempMove);
                     }
 
@@ -1018,7 +1018,7 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "Black")
                         {
-                            nOMB++;
+                            nOMW++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1026,9 +1026,8 @@ public class ChessBoardPVP : MonoBehaviour
 
                 if (selectedPiece.tag == "Black")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whitePossiblePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
                     {
-                        Debug.Log("King Moves: " + tempMove.ToString("f2"));
                         nOMB++;
                         lightList.Add(tempMove);
                     }

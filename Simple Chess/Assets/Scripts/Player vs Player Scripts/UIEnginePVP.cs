@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 public class UIEnginePVP : MonoBehaviour
 {
     #region AIGame Global Variables
-    public static bool AIGame = true;
-    public static bool playerSelectedWhite = false;
+    public static bool AIGame = false;
+    public static bool playerSelectedWhite = true;
     bool AIThinking;
     public GameObject enPassantGORef;
     #endregion
@@ -23,6 +24,8 @@ public class UIEnginePVP : MonoBehaviour
     public List<Vector3> castlingLightList = new List<Vector3>();
     public List<Vector3> EnPassantLightList = new List<Vector3>();
     public List<Vector3> whitePossiblePositions = new List<Vector3>();
+    public List<Vector3> whiteTakeablePositions = new List<Vector3>();
+    public List<Vector3> blackTakeablePositions = new List<Vector3>();
     public List<Vector3> blackPossiblePositions = new List<Vector3>();
     public List<Vector3> ProtectedWhitePieces = new List<Vector3>();
     public List<Vector3> ProtectedBlackPieces = new List<Vector3>();
@@ -42,19 +45,20 @@ public class UIEnginePVP : MonoBehaviour
     public GameObject[] lights, castlingLights, enPassantLights;
     public GameObject selectedPiece, rookCastling, pawnEnPassant;
     public GameObject lightPrefab, board, whiteGraveyard, blackGraveyard;
-    public GameObject promotionPanel, queenButton, rookButton, knightButton, bishopButton;
+    public GameObject promotionPanel, queenButton, rookButton, knightButton, bishopButton, gameOverPanel;
     #endregion
 
     int tempInt = 0;
     int numberOfPMW, numberOfPMB;
     string promotionPeice = "";
 
-  
+
     void Start()
     {
         ChessBoardPVPRef = FindObjectOfType<ChessBoardPVP>();
         StockfishRef = FindObjectOfType<Stockfish>();
         firstMove = true;
+        gameOverPanel.SetActive(false);
         UpdateUI();
     }
 
@@ -99,7 +103,7 @@ public class UIEnginePVP : MonoBehaviour
                             else
                             {
                                 ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                 //StartCoroutine(AnimateCamera());
                                 DestroyAndClearLights();
                             }
@@ -120,7 +124,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -158,7 +162,7 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             //StartCoroutine(AnimateCamera());
                                             DestroyAndClearLights();
                                             //Debug.Log(ChessBoardPVPRef.GetBoardState());
@@ -205,7 +209,7 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             DestroyAndClearLights();
                                             //Debug.Log(ChessBoardPVPRef.GetBoardState());
                                         }
@@ -231,7 +235,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -285,7 +289,7 @@ public class UIEnginePVP : MonoBehaviour
 
                             rookCastling.GetComponent<Track>().startingPosition = false;
 
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             DestroyAndClearLights();
                         }
 
@@ -300,7 +304,7 @@ public class UIEnginePVP : MonoBehaviour
                             selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
                             selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the Kings new position + gameobject to the dictionary
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             DestroyAndClearLights();
                         }
 
@@ -328,7 +332,7 @@ public class UIEnginePVP : MonoBehaviour
                 //Debug.Log(characters[2] + characters[3] + ": " + ChessBoardPVPRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]).ToString("f2"));
 
                 //Get the positons
-                //Debug.Log("Best Move: " + bestmove);
+                Debug.Log("Best Move: " + bestmove);
 
                 GameObject selectedPiece = ChessBoardPVPRef.piecePosition[ChessBoardPVPRef.ConvertBoardStateIntoPosition(characters[0] + characters[1])];
                 //Debug.Log("Selected Piece: " + selectedPiece.transform.GetChild(0).tag + " " + selectedPiece.transform.localPosition.ToString("f2"));
@@ -376,7 +380,7 @@ public class UIEnginePVP : MonoBehaviour
                             else
                             {
                                 ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                 ChessBoardPVPRef.CheckMateCheck(numberOfPMW, numberOfPMB);
                                 DestroyAndClearLights();
                                 //Debug.Log(ChessBoardPVPRef.GetBoardState());
@@ -398,7 +402,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -436,7 +440,7 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             DestroyAndClearLights();
                                             // Debug.Log(ChessBoardPVPRef.GetBoardState());
                                         }
@@ -477,7 +481,7 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             DestroyAndClearLights();
                                             //Debug.Log(ChessBoardPVPRef.GetBoardState());
                                         }
@@ -498,7 +502,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -552,7 +556,7 @@ public class UIEnginePVP : MonoBehaviour
 
                             rookCastling.GetComponent<Track>().startingPosition = false;
 
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             DestroyAndClearLights();
                         }
 
@@ -567,7 +571,7 @@ public class UIEnginePVP : MonoBehaviour
                             selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
                             selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the pawns new position + gameobject to the dictionary
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             DestroyAndClearLights();
                         }
                         else
@@ -641,7 +645,7 @@ public class UIEnginePVP : MonoBehaviour
                             else
                             {
                                 ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                 //StartCoroutine(AnimateCamera());
                                 DestroyAndClearLights();
                                 // Debug.Log(ChessBoardPVPRef.GetBoardState());
@@ -663,7 +667,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -701,10 +705,9 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             //StartCoroutine(AnimateCamera());
                                             DestroyAndClearLights();
-                                            Debug.Log(ChessBoardPVPRef.GetBoardState());
                                         }
                                     }
                                 }
@@ -743,10 +746,9 @@ public class UIEnginePVP : MonoBehaviour
                                         else
                                         {
                                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                                             //StartCoroutine(AnimateCamera());
                                             DestroyAndClearLights();
-                                            Debug.Log(ChessBoardPVPRef.GetBoardState());
                                         }
                                     }
                                 }
@@ -765,7 +767,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -819,7 +821,7 @@ public class UIEnginePVP : MonoBehaviour
 
                             rookCastling.GetComponent<Track>().startingPosition = false;
 
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             //StartCoroutine(AnimateCamera());
                             DestroyAndClearLights();
                         }
@@ -835,7 +837,7 @@ public class UIEnginePVP : MonoBehaviour
                             selectedPiece.transform.localPosition = hitInfo.transform.localPosition;
                             selectedPiece.transform.localPosition -= new Vector3(0, 0.4f, 0); // Removes the height change applied onto the highlights
                             ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the Kings new position + gameobject to the dictionary
-                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+                            AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
                             //StartCoroutine(AnimateCamera());
                             DestroyAndClearLights();
                         }
@@ -855,7 +857,7 @@ public class UIEnginePVP : MonoBehaviour
             int i = 0;
             foreach (Vector3 V in blackPossiblePositions)
             {
-                Debug.Log("Black Position " + i + ": "+  V.ToString("f2"));
+                Debug.Log("Black Position " + i + ": " + V.ToString("f2"));
                 i++;
             }
         }
@@ -864,7 +866,7 @@ public class UIEnginePVP : MonoBehaviour
             int i = 0;
             foreach (Vector3 V in whitePossiblePositions)
             {
-                Debug.Log("Black Position " + i + ": " + V.ToString("f2"));
+                Debug.Log("White Position " + i + ": " + V.ToString("f2"));
                 i++;
             }
         }
@@ -970,7 +972,7 @@ public class UIEnginePVP : MonoBehaviour
         }
     }
 
-    void AllPossibleMoves(ref List<Vector3> WPosP, ref List<Vector3> BPosP, ref List<Vector3> pWpieces, ref List<Vector3> pBPieces)
+    void AllPossibleMoves(ref List<Vector3> WPosP, ref List<Vector3> BPosP, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> wTP, ref List<Vector3> bTP)
     {
         #region Variables + Clears
         Dictionary<Vector3, GameObject> tempWhiteList = new Dictionary<Vector3, GameObject>();
@@ -983,16 +985,25 @@ public class UIEnginePVP : MonoBehaviour
         List<Vector3> tempBPosP1 = new List<Vector3>();
         List<Vector3> tempBPosP2 = new List<Vector3>();
         List<Vector3> tempBPosP3 = new List<Vector3>();
+        List<Vector3> tempWTPos1 = new List<Vector3>();
+        List<Vector3> tempWTPos2 = new List<Vector3>();
+        List<Vector3> tempWTPos3 = new List<Vector3>();
+        List<Vector3> tempBTPos1 = new List<Vector3>();
+        List<Vector3> tempBTPos2 = new List<Vector3>();
+        List<Vector3> tempBTPos3 = new List<Vector3>();
         numberOfPMW = 0;
         numberOfPMB = 0;
         ChessBoardPVPRef.pinnedPiecePath.Clear();
         ChessBoardPVPRef.piecesChecking.Clear();
         ChessBoardPVPRef.piecesPuttingKingInCheck = 0;
         ChessBoardPVPRef.lineOfCheck.Clear();
-        pWpieces.Clear();
+        pWPieces.Clear();
         pBPieces.Clear();
         WPosP.Clear();
         BPosP.Clear();
+        wTP.Clear();
+        bTP.Clear();
+        TempList1.Clear();
         #endregion
 
         #region Un-pin Pieces
@@ -1031,14 +1042,93 @@ public class UIEnginePVP : MonoBehaviour
             }
         }
         #endregion
+        
+        #region If White to move [All Takeable Positions]
+        if (ChessBoardPVPRef.whiteToMove)
+        {
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
+            {
+                if (pPos.Value.transform.GetChild(0).tag == "Pawn")
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref numberOfPMW, ref numberOfPMB, ref tempBTPos2);
+                }
+                else
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                }
+            }
+            if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
+            {
+                ChessBoardPVPRef.check = true;
+            }
+            bTP.AddRange(tempBTPos1);
+            bTP.AddRange(tempBTPos2);
+            bTP.AddRange(tempBTPos3);
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
+            {
+                if (pPos.Value.transform.GetChild(0).tag == "Pawn")
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref numberOfPMW, ref numberOfPMB, ref tempWTPos2);
+                }
+                else
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                }
+            }
+            wTP.AddRange(tempWTPos1);
+            wTP.AddRange(tempWTPos2);
+            wTP.AddRange(tempWTPos3);
+        }
+        #endregion
 
-        #region If White to move
+        #region If Black to move [All Takeable Positions]
+        if (!ChessBoardPVPRef.whiteToMove)
+        {
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
+            {
+                if (pPos.Value.transform.GetChild(0).tag == "Pawn")
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref numberOfPMW, ref numberOfPMB, ref tempWTPos2);
+                }
+                else
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                }
+            }
+            if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
+            {
+                ChessBoardPVPRef.check = true;
+            }
+            wTP.AddRange(tempWTPos1);
+            wTP.AddRange(tempWTPos2);
+            wTP.AddRange(tempWTPos3);
+
+            foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
+            {
+                if (pPos.Value.transform.GetChild(0).tag == "Pawn")
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref numberOfPMW, ref numberOfPMB, ref tempBTPos2);
+                }
+                else
+                {
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                }
+            }
+            bTP.AddRange(tempBTPos1);
+            bTP.AddRange(tempBTPos2);
+            bTP.AddRange(tempBTPos3);
+        }
+        #endregion
+
+        
+
+        #region If White to move [All Possible Positions]
         // If white to move, calcualte blacks moves first for chance of check.
         if (ChessBoardPVPRef.whiteToMove)
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref pWpieces, ref pBPieces, ref tempBPosP2, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP2, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB, ref TempList1);
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
             {
@@ -1049,7 +1139,7 @@ public class UIEnginePVP : MonoBehaviour
             BPosP.AddRange(tempBPosP3);
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref pWpieces, ref pBPieces, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB, ref TempList1);
             }
             WPosP.AddRange(tempWPosP1);
             WPosP.AddRange(tempWPosP2);
@@ -1057,12 +1147,12 @@ public class UIEnginePVP : MonoBehaviour
         }
         #endregion
 
-        #region If Black to move
+        #region If Black to move [All Possible Positions]
         else if (!ChessBoardPVPRef.whiteToMove)
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref pWpieces, ref pBPieces, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB, ref TempList1);
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
             {
@@ -1073,7 +1163,7 @@ public class UIEnginePVP : MonoBehaviour
             WPosP.AddRange(tempWPosP3);
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref pWpieces, ref pBPieces, ref tempBPosP3, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP3, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB, ref TempList1);
             }
             BPosP.AddRange(tempBPosP1);
             BPosP.AddRange(tempBPosP2);
@@ -1081,22 +1171,15 @@ public class UIEnginePVP : MonoBehaviour
         }
         #endregion
 
-
-        //Debug.Log("Old Number of Possible Moves White: " + numberOfPMW);
-        //Debug.Log("Old Number of Possible Moves Black: " + numberOfPMB);
-
         numberOfPMW = WPosP.Count;
         numberOfPMB = BPosP.Count;
-
-        //Debug.Log("New Number of Possible Moves White: " + numberOfPMW);
-        //Debug.Log("New Number of Possible Moves Black: " + numberOfPMB);
 
         ChessBoardPVPRef.CheckMateCheck(numberOfPMW, numberOfPMB);
         ChessBoardPVPRef.MoveCounter(ref ChessBoardPVPRef.currentMove);
 
         WPosP.AddRange(tempDiagonalSpacesW);
         BPosP.AddRange(tempDiagonalSpacesB);
-        
+
         if (firstMove)
         {
             firstMove = !firstMove;
@@ -1214,6 +1297,7 @@ public class UIEnginePVP : MonoBehaviour
                     if (ChessBoardPVPRef.checkMate == true)
                     {
                         playerTurn.text = "Checkmate!";
+                        gameOverPanel.SetActive(true);
                     }
 
                     else if (ChessBoardPVPRef.check == true)
@@ -1295,7 +1379,6 @@ public class UIEnginePVP : MonoBehaviour
                 if (selectedPiece.transform.localPosition.z == ChessBoardPVPRef.bZMax)
                 {
                     Vector3 savedPosition = selectedPiece.transform.localPosition;
-                    Debug.Log("A");
                     //save current Positons
                     //Perform Promotion
                     playerTurn.gameObject.SetActive(false);
@@ -1371,21 +1454,19 @@ public class UIEnginePVP : MonoBehaviour
                     promotionPanel.SetActive(false);
                     playerTurn.gameObject.SetActive(true);
                 }
-                
+
             }
         }
     }
-
     IEnumerator WaitForPromotion()
     {
         yield return new WaitUntil(() => promoting == false);
 
         ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
-        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
         //StartCoroutine(AnimateCamera());
         DestroyAndClearLights();
     }
-
     public void DisplayPromotionPanel(string colour)
     {
         promotionPanel.SetActive(true);
@@ -1528,7 +1609,11 @@ public class UIEnginePVP : MonoBehaviour
                         ChessBoardPVPRef.piecePosition.Add(selPiece.transform.localPosition, selPiece);
                         TakePieceCheck(selPiece, new Vector3(0, 0, 0));
                         GameObject newPiece = Instantiate(ChessBoardPVPRef.Queen, ChessBoardPVPRef.chessBoard.transform);
+                        newPiece.AddComponent<Track>().startingPosition = false;
+                        newPiece.GetComponent<Renderer>().material = ChessBoardPVPRef.white;
+                        newPiece.tag = "White";
                         newPiece.transform.localPosition = newPosition;
+                        newPiece.transform.localScale = new Vector3(1, 1, 1);
                         ChessBoardPVPRef.piecePosition.Add(newPiece.transform.localPosition, newPiece);
                     }
                     else
@@ -1544,8 +1629,13 @@ public class UIEnginePVP : MonoBehaviour
                     {
                         Destroy(selPiece);
                         GameObject newPiece = Instantiate(ChessBoardPVPRef.Queen, ChessBoardPVPRef.chessBoard.transform);
+                        newPiece.AddComponent<Track>().startingPosition = false;
+                        newPiece.GetComponent<Renderer>().material = ChessBoardPVPRef.black;
+                        newPiece.tag = "Black";
                         newPiece.transform.localPosition = newPosition;
+                        newPiece.transform.localScale = new Vector3(1, 1, 1);
                         ChessBoardPVPRef.piecePosition.Add(newPiece.transform.localPosition, newPiece);
+
                     }
                     else
                     {
@@ -1616,7 +1706,19 @@ public class UIEnginePVP : MonoBehaviour
             }
         }
 
-        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces);
+        AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
         #endregion
+    }
+
+    public void ReturnToMainMenu()
+    {
+        SceneManager.UnloadSceneAsync("Player vs PLayer");
+        SceneManager.LoadScene("Main Menu");
+    }
+
+    public void NewGame()
+    {
+        SceneManager.UnloadSceneAsync("Player vs PLayer");
+        SceneManager.LoadScene("Player vs PLayer");
     }
 }
