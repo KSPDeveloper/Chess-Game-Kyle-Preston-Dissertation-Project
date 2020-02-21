@@ -29,7 +29,7 @@ public class MainMenu : MonoBehaviour
 
     public void WhiteButton()
     {
-        UIEngine.playerSelectedWhite = true;
+        UIEnginePVP.playerSelectedWhite = true;
         UIEnginePVP.AIGame = true;
         selectScreenUI.SetActive(false);
         difficultyUI.SetActive(true);
@@ -37,7 +37,7 @@ public class MainMenu : MonoBehaviour
 
     public void BlackButton()
     {
-        UIEngine.playerSelectedWhite = false;
+        UIEnginePVP.playerSelectedWhite = false;
         UIEnginePVP.AIGame = true;
         selectScreenUI.SetActive(false);
         difficultyUI.SetActive(true);

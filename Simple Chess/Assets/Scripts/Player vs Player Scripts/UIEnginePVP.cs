@@ -14,28 +14,28 @@ public class UIEnginePVP : MonoBehaviour
     #endregion
 
     #region Bools
-    public bool cameraFocusWhite = true;
-    bool promoting = false;
-    bool isCameraMoving = false;
-    bool firstMove;
+    public bool cameraFocusWhite = true; // As the name suggests, a bool which tracks which side the camera is focusing.
+    bool promoting = false; // a bool to track if a player is in the middle of promoting, halting the game until complete.
+    bool isCameraMoving = false; // Stops the player from being able to play a move whilst the camera animates to its new position.
+    bool firstMove; // One time use for UpdateUI so it can display the correct information.
+    bool setActiveBoolAIOptions = false, setActiveBoolOptions = false;
     #endregion
     #region Lists
-    public List<Vector3> lightList = new List<Vector3>();
-    public List<Vector3> castlingLightList = new List<Vector3>();
-    public List<Vector3> EnPassantLightList = new List<Vector3>();
-    public List<Vector3> whitePossiblePositions = new List<Vector3>();
-    public List<Vector3> whiteTakeablePositions = new List<Vector3>();
-    public List<Vector3> blackTakeablePositions = new List<Vector3>();
-    public List<Vector3> blackPossiblePositions = new List<Vector3>();
-    public List<Vector3> ProtectedWhitePieces = new List<Vector3>();
-    public List<Vector3> ProtectedBlackPieces = new List<Vector3>();
-    List<Vector3> TempList1 = new List<Vector3>();
-    List<Vector3> TempList2 = new List<Vector3>();
+    public List<Vector3> lightList = new List<Vector3>(); // Used in a variety of ways, however it's main purpose is to contain all postions that a piece can move too.
+    public List<Vector3> castlingLightList = new List<Vector3>(); // strictly for castling, as a special case, it required a different list to be used.
+    public List<Vector3> EnPassantLightList = new List<Vector3>();// strictly for En Passant, as a special case, it required a different list to be used.
+    public List<Vector3> whitePossiblePositions = new List<Vector3>(); // All possible positions.
+    public List<Vector3> whiteTakeablePositions = new List<Vector3>(); // All possible positions - Pawn straight forward movement.
+    public List<Vector3> blackTakeablePositions = new List<Vector3>(); // All possible positions - Pawn straight forward movement.
+    public List<Vector3> blackPossiblePositions = new List<Vector3>(); // All possible positions.
+    public List<Vector3> ProtectedWhitePieces = new List<Vector3>(); // Tracks all pieces being protected, for the king so it cannot take the pieces with the locations of this list.
+    public List<Vector3> ProtectedBlackPieces = new List<Vector3>(); // Tracks all pieces being protected, for the king so it cannot take the pieces with the locations of this list.
+    List<Vector3> TempList1 = new List<Vector3>(); // Used as a filler for unused variables.
     #endregion
     #region Other
-    public Camera transitionCamera;
+    public Camera transitionCamera; // The main Camera.
     public TextMeshProUGUI playerTurn;
-    public Sprite wQueen2D, wRook2D, wBishop2D, wKnight2D, bQueen2D, bRook2D, bBishop2D, bKnight2D;
+    public Sprite wQueen2D, wRook2D, wBishop2D, wKnight2D, bQueen2D, bRook2D, bBishop2D, bKnight2D; // Sprites displayed when the promiton panel appears.
     Vector3 graveYardMoveW = new Vector3(3.0f, 0, -125.0f);
     Vector3 graveYardMoveB = new Vector3(3.0f, 0, -125.0f);
     Stockfish StockfishRef;
@@ -45,11 +45,9 @@ public class UIEnginePVP : MonoBehaviour
     public GameObject[] lights, castlingLights, enPassantLights;
     public GameObject selectedPiece, rookCastling, pawnEnPassant;
     public GameObject lightPrefab, board, whiteGraveyard, blackGraveyard;
-    public GameObject promotionPanel, queenButton, rookButton, knightButton, bishopButton, gameOverPanel;
+    public GameObject promotionPanel, queenButton, rookButton, knightButton, bishopButton, gameOverPanel, optionsAIPanel, optionsPanel;
     #endregion
 
-    int tempInt = 0;
-    int numberOfPMW, numberOfPMB;
     string promotionPeice = "";
 
 
@@ -59,7 +57,24 @@ public class UIEnginePVP : MonoBehaviour
         StockfishRef = FindObjectOfType<Stockfish>();
         firstMove = true;
         gameOverPanel.SetActive(false);
+        optionsAIPanel.SetActive(false);
+        optionsPanel.SetActive(false);
+        promotionPanel.SetActive(false);
         UpdateUI();
+    }
+
+    void Awake()
+    {
+        if (playerSelectedWhite == true)
+        {
+            cameraFocusWhite = false;
+            CameraChange();
+        }
+        else
+        {
+            cameraFocusWhite = true;
+            CameraChange();
+        }
     }
 
     void Update()
@@ -67,7 +82,7 @@ public class UIEnginePVP : MonoBehaviour
         if (AIGame == true)
         {
             //Players turn
-            if (playerSelectedWhite == true && ChessBoardPVPRef.whiteToMove == true && ChessBoardPVPRef.checkMate == false)
+            if (playerSelectedWhite == true && ChessBoardPVPRef.whiteToMove == true && ChessBoardPVPRef.checkMate == false && isCameraMoving == false)
             {
                 AIThinking = false;
                 if (Input.GetMouseButtonDown(0))
@@ -124,7 +139,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -235,7 +250,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -332,7 +347,7 @@ public class UIEnginePVP : MonoBehaviour
                 //Debug.Log(characters[2] + characters[3] + ": " + ChessBoardPVPRef.ConvertBoardStateIntoPosition(characters[2] + characters[3]).ToString("f2"));
 
                 //Get the positons
-                Debug.Log("Best Move: " + bestmove);
+                //Debug.Log("Best Move: " + bestmove);
 
                 GameObject selectedPiece = ChessBoardPVPRef.piecePosition[ChessBoardPVPRef.ConvertBoardStateIntoPosition(characters[0] + characters[1])];
                 //Debug.Log("Selected Piece: " + selectedPiece.transform.GetChild(0).tag + " " + selectedPiece.transform.localPosition.ToString("f2"));
@@ -344,7 +359,7 @@ public class UIEnginePVP : MonoBehaviour
             }
 
             //Player's turn
-            else if (playerSelectedWhite == false && ChessBoardPVPRef.whiteToMove == false && ChessBoardPVPRef.checkMate == false)
+            else if (playerSelectedWhite == false && ChessBoardPVPRef.whiteToMove == false && ChessBoardPVPRef.checkMate == false && isCameraMoving == false)
             {
                 AIThinking = false;
                 if (Input.GetMouseButtonDown(0))
@@ -381,7 +396,6 @@ public class UIEnginePVP : MonoBehaviour
                             {
                                 ChessBoardPVPRef.piecePosition.Add(selectedPiece.transform.localPosition, selectedPiece); // Adds the new position + gameobject to the dictionary
                                 AllPossibleMoves(ref whitePossiblePositions, ref blackPossiblePositions, ref ProtectedWhitePieces, ref ProtectedBlackPieces, ref whiteTakeablePositions, ref blackTakeablePositions);
-                                ChessBoardPVPRef.CheckMateCheck(numberOfPMW, numberOfPMB);
                                 DestroyAndClearLights();
                                 //Debug.Log(ChessBoardPVPRef.GetBoardState());
                             }
@@ -402,7 +416,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -502,7 +516,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -667,7 +681,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -767,7 +781,7 @@ public class UIEnginePVP : MonoBehaviour
                                 {
                                     DestroyAndClearLights();
                                     selectedPiece = hitInfo.transform.gameObject;
-                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList2, ref castlingLightList, ref EnPassantLightList, ref TempList2, ref tempInt, ref tempInt, ref TempList2);
+                                    ChessBoardPVPRef.GetSpaces(selectedPiece, ref lightList, ref TempList1, ref TempList1, ref castlingLightList, ref EnPassantLightList, ref TempList1, ref TempList1);
                                     if (lightList.Count != 0)
                                     {
                                         highlightPossibleMoves(lightList, castlingLightList, EnPassantLightList);
@@ -852,6 +866,20 @@ public class UIEnginePVP : MonoBehaviour
             }
         }
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (AIGame)
+            {
+                ToggleAIPanel();
+            }
+            else
+            {
+                TogglePanel();
+            }
+        }
+
+        #region Debugging Purposes
+        #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.B))
         {
             int i = 0;
@@ -881,37 +909,26 @@ public class UIEnginePVP : MonoBehaviour
                 Debug.Log("N");
             }
         }
+        #endif
+        #endregion
     }
 
     #region Camera
-    void CameraChange()
+    public void CameraChange() //A method called from the Camera Change button.
     {
         cameraFocusWhite = !cameraFocusWhite;
-
-        if (cameraFocusWhite == true)
-        {
-            transitionCamera.transform.localPosition = new Vector3(86.6f, 200.9f, -47f);
-            transitionCamera.transform.localRotation = Quaternion.Euler(60.58f, 0f, 0f);
-        }
-        else
-        {
-            transitionCamera.transform.localPosition = new Vector3(86.6f, 200.9f, -47f);
-            transitionCamera.transform.localRotation = Quaternion.Euler(60.58f, 180f, 0f);
-        }
+        StartCoroutine(AnimateCamera());
     }
 
-    IEnumerator AnimateCamera()
+    IEnumerator AnimateCamera() // Used to Animate the camera toggling from one side to another.
     {
-
         if (cameraFocusWhite == true)
         {
-            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("whiteToBlack");
-            cameraFocusWhite = false;
+            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("blackToWhite");
         }
         else
         {
-            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("blackToWhite");
-            cameraFocusWhite = true;
+            transitionCamera.gameObject.GetComponent<Animator>().SetTrigger("whiteToBlack");
         }
         isCameraMoving = true;
         yield return new WaitForSeconds(2.0f);
@@ -919,12 +936,12 @@ public class UIEnginePVP : MonoBehaviour
     }
 
     #endregion
-    void DestroyAndClearLights()
+    void DestroyAndClearLights() //This is used to Clear lights from the chessboard and is called each time an update to a piece being moved, deselected or changed.
     {
         lightList.Clear();
         castlingLightList.Clear();
         EnPassantLightList.Clear();
-        foreach (Transform child in board.transform)
+        foreach (Transform child in board.transform) // Cycles through all GameObjects (Transforms) in the chess board.
         {
             if (child.tag == "Move")
             {
@@ -943,7 +960,7 @@ public class UIEnginePVP : MonoBehaviour
         }
     }
 
-    void TakePieceCheck(GameObject newPos, Vector3 difference)
+    void TakePieceCheck(GameObject newPos, Vector3 difference) // This is used to check if a piece being called exists and can be taken, it will also put it into the grave.
     {
         Vector3 temp = newPos.transform.localPosition + difference;
         if (ChessBoardPVPRef.piecePosition.ContainsKey(temp)) //checks if there is a piece what can be taken
@@ -974,6 +991,12 @@ public class UIEnginePVP : MonoBehaviour
 
     void AllPossibleMoves(ref List<Vector3> WPosP, ref List<Vector3> BPosP, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> wTP, ref List<Vector3> bTP)
     {
+        //This is a long Funciton containing all of the variables and Lists used for peices to check if they can move freely or not. it is called once every end of the turn.
+        //It tracks all positions possible by each peice (seperated by colour), it tracks all takeable positions (seperated by colour), the difference being for the King, 
+        // if the King used all possible positions, all pawn movement would be included, which would stop the King from being able to move infront of a Pawn, instead there are two seperate lists
+        // almosts identical apart from this one factor.
+
+        //This is ran in a particular order to ensure check rules are abided by.
         #region Variables + Clears
         Dictionary<Vector3, GameObject> tempWhiteList = new Dictionary<Vector3, GameObject>();
         Dictionary<Vector3, GameObject> tempBlackList = new Dictionary<Vector3, GameObject>();
@@ -991,8 +1014,6 @@ public class UIEnginePVP : MonoBehaviour
         List<Vector3> tempBTPos1 = new List<Vector3>();
         List<Vector3> tempBTPos2 = new List<Vector3>();
         List<Vector3> tempBTPos3 = new List<Vector3>();
-        numberOfPMW = 0;
-        numberOfPMB = 0;
         ChessBoardPVPRef.pinnedPiecePath.Clear();
         ChessBoardPVPRef.piecesChecking.Clear();
         ChessBoardPVPRef.piecesPuttingKingInCheck = 0;
@@ -1050,11 +1071,11 @@ public class UIEnginePVP : MonoBehaviour
             {
                 if (pPos.Value.transform.GetChild(0).tag == "Pawn")
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref numberOfPMW, ref numberOfPMB, ref tempBTPos2);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref tempBTPos2);
                 }
                 else
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref TempList1);
                 }
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
@@ -1068,11 +1089,11 @@ public class UIEnginePVP : MonoBehaviour
             {
                 if (pPos.Value.transform.GetChild(0).tag == "Pawn")
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref numberOfPMW, ref numberOfPMB, ref tempWTPos2);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref tempWTPos2);
                 }
                 else
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref TempList1);
                 }
             }
             wTP.AddRange(tempWTPos1);
@@ -1088,11 +1109,11 @@ public class UIEnginePVP : MonoBehaviour
             {
                 if (pPos.Value.transform.GetChild(0).tag == "Pawn")
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref numberOfPMW, ref numberOfPMB, ref tempWTPos2);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempWTPos1, ref tempWTPos2);
                 }
                 else
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWTPos1, ref pWPieces, ref pBPieces, ref tempWTPos2, ref tempWTPos3, ref TempList1, ref TempList1);
                 }
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
@@ -1107,11 +1128,11 @@ public class UIEnginePVP : MonoBehaviour
             {
                 if (pPos.Value.transform.GetChild(0).tag == "Pawn")
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref numberOfPMW, ref numberOfPMB, ref tempBTPos2);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref TempList1, ref pWPieces, ref pBPieces, ref TempList1, ref TempList1, ref tempBTPos1, ref tempBTPos2);
                 }
                 else
                 {
-                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                    ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBTPos1, ref pWPieces, ref pBPieces, ref tempBTPos2, ref tempBTPos3, ref TempList1, ref TempList1);
                 }
             }
             bTP.AddRange(tempBTPos1);
@@ -1128,7 +1149,7 @@ public class UIEnginePVP : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP2, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP2, ref tempBPosP3, ref tempDiagonalSpacesB, ref TempList1);
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
             {
@@ -1139,7 +1160,7 @@ public class UIEnginePVP : MonoBehaviour
             BPosP.AddRange(tempBPosP3);
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref TempList1);
             }
             WPosP.AddRange(tempWPosP1);
             WPosP.AddRange(tempWPosP2);
@@ -1152,7 +1173,7 @@ public class UIEnginePVP : MonoBehaviour
         {
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempWhiteList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempWPosP1, ref TempList1, ref TempList1, ref tempWPosP2, ref tempWPosP3, ref tempDiagonalSpacesW, ref TempList1);
             }
             if (ChessBoardPVPRef.piecesPuttingKingInCheck > 0)
             {
@@ -1163,7 +1184,7 @@ public class UIEnginePVP : MonoBehaviour
             WPosP.AddRange(tempWPosP3);
             foreach (KeyValuePair<Vector3, GameObject> pPos in tempBlackList)
             {
-                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP3, ref tempBPosP3, ref tempDiagonalSpacesB, ref numberOfPMW, ref numberOfPMB, ref TempList1);
+                ChessBoardPVPRef.GetSpaces(pPos.Value, ref tempBPosP1, ref TempList1, ref TempList1, ref tempBPosP3, ref tempBPosP3, ref tempDiagonalSpacesB, ref TempList1);
             }
             BPosP.AddRange(tempBPosP1);
             BPosP.AddRange(tempBPosP2);
@@ -1171,14 +1192,12 @@ public class UIEnginePVP : MonoBehaviour
         }
         #endregion
 
-        numberOfPMW = WPosP.Count;
-        numberOfPMB = BPosP.Count;
-
-        ChessBoardPVPRef.CheckMateCheck(numberOfPMW, numberOfPMB);
+        ChessBoardPVPRef.CheckMateCheck(WPosP.Count, BPosP.Count);
         ChessBoardPVPRef.MoveCounter(ref ChessBoardPVPRef.currentMove);
 
-        WPosP.AddRange(tempDiagonalSpacesW);
-        BPosP.AddRange(tempDiagonalSpacesB);
+        //Adds the Diagonal positons from pawns (Obsolete).
+        //WPosP.AddRange(tempDiagonalSpacesW);
+        //BPosP.AddRange(tempDiagonalSpacesB);
 
         if (firstMove)
         {
@@ -1189,6 +1208,7 @@ public class UIEnginePVP : MonoBehaviour
 
     void highlightPossibleMoves(List<Vector3> lightlist, List<Vector3> castlingList, List<Vector3> enPassantLL)
     {
+        //Called to illuminate squares that a piece can go to.
         int i = 0;
         if (lightlist.Count > 0)
         {
@@ -1288,7 +1308,11 @@ public class UIEnginePVP : MonoBehaviour
         {
             if (!firstMove)
             {
-                if (whitePossiblePositions.Count == 0 || blackPossiblePositions.Count == 0 && ChessBoardPVPRef.check == false)
+                if (whitePossiblePositions.Count == 0 && ChessBoardPVPRef.check == false && ChessBoardPVPRef.whiteToMove && ChessBoardPVPRef.checkMate == false)
+                {
+                    playerTurn.text = "Draw!";
+                }
+                else if (blackPossiblePositions.Count == 0 && ChessBoardPVPRef.check == false && !ChessBoardPVPRef.whiteToMove && ChessBoardPVPRef.checkMate == false)
                 {
                     playerTurn.text = "Draw!";
                 }
@@ -1335,7 +1359,11 @@ public class UIEnginePVP : MonoBehaviour
         {
             if (!firstMove)
             {
-                if (whitePossiblePositions.Count == 0 || blackPossiblePositions.Count == 0 && ChessBoardPVPRef.check == false && firstMove == false)
+                if (whitePossiblePositions.Count == 0 && ChessBoardPVPRef.check == false && ChessBoardPVPRef.whiteToMove && ChessBoardPVPRef.checkMate == false)
+                {
+                    playerTurn.text = "Draw!";
+                }
+                else if (blackPossiblePositions.Count == 0 && ChessBoardPVPRef.check == false && !ChessBoardPVPRef.whiteToMove && ChessBoardPVPRef.checkMate == false)
                 {
                     playerTurn.text = "Draw!";
                 }
@@ -1344,6 +1372,7 @@ public class UIEnginePVP : MonoBehaviour
                     if (ChessBoardPVPRef.checkMate == true)
                     {
                         playerTurn.text = "Checkmate!";
+                        gameOverPanel.SetActive(true);
                     }
 
                     else if (ChessBoardPVPRef.check == true)
@@ -1372,6 +1401,7 @@ public class UIEnginePVP : MonoBehaviour
     #region Promotion
     IEnumerator PromotionCheck(GameObject pawn)
     {
+        //This is ran in an IEnumerator so the game must wait for a piece to be chosen before continuing.
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
             if (selectedPiece.tag == "White")
@@ -1509,7 +1539,7 @@ public class UIEnginePVP : MonoBehaviour
 
     IEnumerator HighlightAIMove(Vector3 LightPos, GameObject selectedP)
     {
-        AIThinking = true;
+        AIThinking = true; // bool used to stop this being ran multiple times as it is called in Update.
 
         GameObject lightGO = Instantiate(lightPrefab, ChessBoardPVPRef.chessBoard.transform);
         lightGO.transform.localPosition = new Vector3(LightPos.x, 0.4f, LightPos.z);
@@ -1529,11 +1559,11 @@ public class UIEnginePVP : MonoBehaviour
         #region MovePieces
 
         ChessBoardPVPRef.check = false; // Resets Check
-        ChessBoardPVPRef.whiteToMove = !ChessBoardPVPRef.whiteToMove;
+        ChessBoardPVPRef.whiteToMove = !ChessBoardPVPRef.whiteToMove; //Switches between white and black for turns.
 
-        ChessBoardPVPRef.piecePosition.Remove(selPiece.transform.localPosition);
+        ChessBoardPVPRef.piecePosition.Remove(selPiece.transform.localPosition); // Removes the piece from piecePosition Dictionary which is used in multiple instances for referencing an object by it's position on the board.
 
-        //If it contains a piece
+        //If the new position `contains a piece
         if (ChessBoardPVPRef.piecePosition.ContainsKey(newPosition))
         {
             if (selPiece.transform.GetChild(0).tag == "Pawn")
@@ -1585,9 +1615,9 @@ public class UIEnginePVP : MonoBehaviour
         //Doesn't contain a piece
         else
         {
-            if (selPiece.transform.GetChild(0).tag == "Pawn") // En Passant
+            if (selPiece.transform.GetChild(0).tag == "Pawn") //Check for Promotion and En Passant.
             {
-                if (enPassantGORef != null)
+                if (enPassantGORef != null) // En Passant
                 {
                     if (newPosition == enPassantGORef.GetComponent<Track>().EnPassantPosition)
                     {
@@ -1623,7 +1653,7 @@ public class UIEnginePVP : MonoBehaviour
                         ChessBoardPVPRef.piecePosition.Add(selPiece.transform.localPosition, selPiece);
                     }
                 }
-                else if (selPiece.tag == "Black") //tag is black
+                else if (selPiece.tag == "Black")
                 {
                     if (newPosition.z == ChessBoardPVPRef.bZMin) //Promotion
                     {
@@ -1680,7 +1710,7 @@ public class UIEnginePVP : MonoBehaviour
                         GameObject Rook = ChessBoardPVPRef.piecePosition[new Vector3(0, 0, 8.75f)]; //locates the correct rook
                         selPiece.transform.localPosition = newPosition;
                         ChessBoardPVPRef.piecePosition.Remove(Rook.transform.localPosition);
-                        Rook.transform.localPosition = newPosition + new Vector3(-1.25f, 0, 0);
+                        Rook.transform.localPosition = newPosition + new Vector3(1.25f, 0, 0);
                         ChessBoardPVPRef.piecePosition.Add(Rook.transform.localPosition, Rook);
                     }
                     //Castle King Side
@@ -1689,7 +1719,7 @@ public class UIEnginePVP : MonoBehaviour
                         GameObject Rook = ChessBoardPVPRef.piecePosition[new Vector3(8.75f, 0, 8.75f)]; //locates the correct rook
                         selPiece.transform.localPosition = newPosition;
                         ChessBoardPVPRef.piecePosition.Remove(Rook.transform.localPosition);
-                        Rook.transform.localPosition = newPosition + new Vector3(1.25f, 0, 0);
+                        Rook.transform.localPosition = newPosition - new Vector3(1.25f, 0, 0);
                         ChessBoardPVPRef.piecePosition.Add(Rook.transform.localPosition, Rook);
                     }
                     else
@@ -1710,6 +1740,7 @@ public class UIEnginePVP : MonoBehaviour
         #endregion
     }
 
+    #region End Game Buttons
     public void ReturnToMainMenu()
     {
         SceneManager.UnloadSceneAsync("Player vs PLayer");
@@ -1721,4 +1752,25 @@ public class UIEnginePVP : MonoBehaviour
         SceneManager.UnloadSceneAsync("Player vs PLayer");
         SceneManager.LoadScene("Player vs PLayer");
     }
+    #endregion
+
+    #region Options
+    
+    public void ToggleAIPanel()
+    {
+        setActiveBoolAIOptions = !setActiveBoolAIOptions;
+        optionsAIPanel.SetActive(setActiveBoolAIOptions); 
+    }
+
+    public void TogglePanel()
+    {
+        setActiveBoolOptions = !setActiveBoolOptions;
+        optionsPanel.SetActive(setActiveBoolOptions);
+    }
+
+    public void BackToGame()
+    {
+        ToggleAIPanel();
+    }
+    #endregion
 }

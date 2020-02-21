@@ -143,40 +143,43 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces, ref int nOMW, ref int nOMB, ref List<Vector3> takeablePositions)
+    public void GetSpaces(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingList, ref List<Vector3> enPassantL, ref List<Vector3> DiagonalSpaces, ref List<Vector3> takeablePositions)
     {
+        //Used to locate the correct piece.
+
         if (selectedPiece.transform.GetChild(0).tag == "Pawn")
         {
-            PawnMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref enPassantL, ref temporaryEnPassantPieceRefs, ref DiagonalSpaces, ref nOMW, ref nOMB, ref takeablePositions);
+            PawnMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref enPassantL, ref temporaryEnPassantPieceRefs, ref DiagonalSpaces, ref takeablePositions);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Rook")
         {
-            RookMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+            RookMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Knight")
         {
-            KnightMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+            KnightMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "Bishop")
         {
-            BishopMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+            BishopMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
         }
 
         else if (selectedPiece.transform.GetChild(0).tag == "King")
         {
-            KingMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB, ref castlingList, temporaryCastlingPieceRefs);
+            KingMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref castlingList, temporaryCastlingPieceRefs);
         }
         else if (selectedPiece.transform.GetChild(0).tag == "Queen")
         {
-            QueenMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+            QueenMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
         }
     }
 
-    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces, ref int nOMW, ref int nOMB, ref List<Vector3> takeablePositions)
+    public void PawnMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> enPassantL, ref GameObject enemyPawnEnPassant, ref List<Vector3> diagonalSpaces, ref List<Vector3> takeablePositions)
     {
+        // 2 conditions are checked first, is the player in check and is the piece pinned, both these facrots effect what moves the piece can do.
         enPassantL.Clear();
         Vector3 moveForward = new Vector3(0, 0, 1.25f);
         Vector3 startingPos = selectedPiece.transform.localPosition;
@@ -193,9 +196,8 @@ public class ChessBoardPVP : MonoBehaviour
                 {
                     //move forward one//
                     tempMove = startingPos + moveForward;
-                    if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                     {
-                        nOMW++;
                         lightList.Add(tempMove);
                     }
 
@@ -209,7 +211,6 @@ public class ChessBoardPVP : MonoBehaviour
                             tempMove += moveForward;
                             if (!piecePosition.ContainsKey(tempMove))
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                             }
                         }
@@ -233,7 +234,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 else
                                 {
                                     takeablePositions.Add(tempMove);
-                                    nOMW++;
                                     lightList.Add(tempMove);
                                 }
                             }
@@ -269,10 +269,9 @@ public class ChessBoardPVP : MonoBehaviour
                     //move forward one//
                     startingPos = selectedPiece.transform.localPosition;
                     tempMove = startingPos - moveForward;
-                    if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                     {
                         lightList.Add(tempMove);
-                        nOMB++;
                     }
 
                     //Used only for when the pawn has not moved from its stating position
@@ -287,7 +286,6 @@ public class ChessBoardPVP : MonoBehaviour
                             if (!piecePosition.ContainsKey(tempMove))
                             {
                                 lightList.Add(tempMove);
-                                nOMB++;
                             }
                         }
                     }
@@ -311,7 +309,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 {
                                     takeablePositions.Add(tempMove);
                                     lightList.Add(tempMove);
-                                    nOMB++;
                                 }
                             }
                             else
@@ -349,7 +346,6 @@ public class ChessBoardPVP : MonoBehaviour
                     if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
                     {
                         lightList.Add(tempMove);
-                        nOMW++;
                     }
 
                     //move forward two
@@ -363,7 +359,6 @@ public class ChessBoardPVP : MonoBehaviour
                             if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
                             {
                                 lightList.Add(tempMove);
-                                nOMW++;
                             }
                         }
                     }
@@ -376,7 +371,6 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
                         {
                             lightList.Add(tempMove);
-                            nOMW++;
                         }
                         diagonalSpaces.Add(tempMove);
                     }
@@ -388,7 +382,6 @@ public class ChessBoardPVP : MonoBehaviour
                     tempMove = startingPos - moveForward;
                     if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove)) // checks if the path forwards has a space to move into that is not the piece pinning it.
                     {
-                        nOMB++;
                         lightList.Add(tempMove);
                     }
 
@@ -402,7 +395,6 @@ public class ChessBoardPVP : MonoBehaviour
                             tempMove -= moveForward;
                             if (pinnedPiecePath[startingPos].Contains(tempMove) && !piecePosition.ContainsKey(tempMove))
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                             }
                         }
@@ -415,7 +407,6 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (pinnedPiecePath[startingPos].Contains(tempMove) && piecePosition.ContainsKey(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
                         diagonalSpaces.Add(tempMove);
@@ -435,7 +426,6 @@ public class ChessBoardPVP : MonoBehaviour
                     if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
                         lightList.Add(tempMove);
-                        nOMW++;
                     }
 
                     //move forward two (starting pos only)
@@ -448,7 +438,6 @@ public class ChessBoardPVP : MonoBehaviour
                             tempMove += moveForward;
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                             }
                         }
@@ -460,7 +449,6 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMove += moveForward + dir; // gets forward one, right / left one position
                         if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
 
@@ -475,7 +463,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 {
                                     if (temp.GetComponent<Track>().enPassant == true)
                                     {
-                                        nOMW++;
                                         enPassantL.Add(temp.transform.localPosition - moveForward);
                                         enemyPawnEnPassant = temp;
                                     }
@@ -491,7 +478,6 @@ public class ChessBoardPVP : MonoBehaviour
                     tempMove = startingPos - moveForward;
                     if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                     {
-                        nOMB++;
                         lightList.Add(tempMove);
                     }
 
@@ -505,7 +491,6 @@ public class ChessBoardPVP : MonoBehaviour
                             tempMove += moveForward;
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                             }
                         }
@@ -517,7 +502,6 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMove -= moveForward - dir; // gets forward one, right / left one position
                         if (piecesChecking.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
 
@@ -532,7 +516,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 {
                                     if (temp.GetComponent<Track>().enPassant == true)
                                     {
-                                        nOMB++;
                                         enPassantL.Add(temp.transform.localPosition - moveForward);
                                         enemyPawnEnPassant = temp;
                                     }
@@ -553,7 +536,7 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    void RookMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB)
+    void RookMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
         bool pieceFound = false;
         Vector3 startingPos = selectedPiece.transform.localPosition;
@@ -571,7 +554,7 @@ public class ChessBoardPVP : MonoBehaviour
                 if (selectedPiece.tag == "White")
                 {
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
 
                     //CHECK FOR BLOCK OR TAKE
                     foreach (Vector3 dir in directions)
@@ -580,11 +563,10 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMove += dir;
 
                         //Regular movement with no pieces in the way
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                             }
                             tempMove += dir;
@@ -592,7 +574,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -601,18 +582,17 @@ public class ChessBoardPVP : MonoBehaviour
                 if (selectedPiece.tag == "Black")
                 {
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
 
                     //CHECK FOR BLOCK OR TAKE
                     foreach (Vector3 dir in directions)
                     {
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                             }
                             tempMove -= dir;
@@ -620,7 +600,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -632,13 +611,13 @@ public class ChessBoardPVP : MonoBehaviour
                 if (selectedPiece.tag == "White")
                 {
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
 
                 if (selectedPiece.tag == "Black")
                 {
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
             }
         }
@@ -656,9 +635,8 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMove = startingPos;
                         tempMove += dir;
                         //regular movement with no pieces in the way
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                             tempMoves.Add(tempMove);
                             tempMove += dir;
@@ -684,7 +662,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                                 else
                                 {
-                                    nOMW++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
                                     pieceFound = true;
@@ -700,7 +677,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove += dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove += dir;
@@ -726,9 +703,8 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos); //adds the position of the piece to the list.
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
                             tempMove -= dir;
@@ -754,7 +730,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                                 else
                                 {
-                                    nOMB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
                                     pieceFound = true;
@@ -771,7 +746,7 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             tempMove -= dir;
                             //Checks for if the piece before is pinned
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove -= dir;
@@ -804,7 +779,6 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                                 tempMove += dir;
                             }
@@ -812,7 +786,7 @@ public class ChessBoardPVP : MonoBehaviour
                     }
 
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
 
                 if (selectedPiece.tag == "Black")
@@ -827,7 +801,6 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
                             }
@@ -835,15 +808,16 @@ public class ChessBoardPVP : MonoBehaviour
                     }
 
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
             }
         }
 
     }
 
-    void KingMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB, ref List<Vector3> castlingLightList, List<GameObject> tempCastlingPieceRef)
+    void KingMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref List<Vector3> castlingLightList, List<GameObject> tempCastlingPieceRef)
     {
+        //Has only two states, either in check or not in check.
         tempCastlingPieceRef.Clear();
         Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
@@ -950,7 +924,7 @@ public class ChessBoardPVP : MonoBehaviour
         }
         #endregion
 
-        foreach (Vector3 dir in directions)
+        foreach (Vector3 dir in directions) //Cycles thorugh all 8 directions possible by the king.
         {
             tempMove = startingPos;
             tempMove += dir;
@@ -959,9 +933,8 @@ public class ChessBoardPVP : MonoBehaviour
             {
                 if (selectedPiece.tag == "White")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && InBoardRange(tempMove)) // if there is no piece in the way on no opposing piece that can hit that square, the king can move to it.
                     {
-                        nOMW++;
                         lightList.Add(tempMove);
                     }
 
@@ -969,7 +942,6 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "Black")
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
 
@@ -982,9 +954,8 @@ public class ChessBoardPVP : MonoBehaviour
 
                 if (selectedPiece.tag == "Black")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && InBoardRange(tempMove)) // if there is no piece in the way on no opposing piece that can hit that square, the king can move to it.
                     {
-                        nOMB++;
                         lightList.Add(tempMove);
                     }
 
@@ -992,7 +963,6 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "White")
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
 
@@ -1008,9 +978,8 @@ public class ChessBoardPVP : MonoBehaviour
             {
                 if (selectedPiece.tag == "White")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.blackTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && InBoardRange(tempMove))
                     {
-                        nOMW++;
                         lightList.Add(tempMove);
                     }
 
@@ -1018,7 +987,6 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "Black")
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1026,9 +994,8 @@ public class ChessBoardPVP : MonoBehaviour
 
                 if (selectedPiece.tag == "Black")
                 {
-                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    if (!piecePosition.ContainsKey(tempMove) && !UIEnginePVPReference.whiteTakeablePositions.Contains(tempMove) && !lineOfCheck.Contains(tempMove) && InBoardRange(tempMove))
                     {
-                        nOMB++;
                         lightList.Add(tempMove);
                     }
 
@@ -1036,7 +1003,6 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         if (piecePosition[tempMove].tag == "White")
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1045,7 +1011,7 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    void BishopMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB)
+    void BishopMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
         bool pieceFound = false;
         Vector3 startingPos = selectedPiece.transform.localPosition;
@@ -1069,7 +1035,7 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos); // adds the orignal piece
                         tempMove = startingPos;
                         tempMove += dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             tempMoves.Add(tempMove);
                             tempMove += dir;
@@ -1093,7 +1059,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove += dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove += dir;
@@ -1115,11 +1081,10 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         tempMove = startingPos;
                         tempMove += dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                             }
                             tempMove += dir;
@@ -1127,7 +1092,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
 
@@ -1143,7 +1107,7 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos); // adds the orignal piece
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             tempMoves.Add(tempMove);
                             tempMove -= dir;
@@ -1167,7 +1131,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove -= dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove -= dir;
@@ -1189,11 +1153,10 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                             }
                             tempMove -= dir;
@@ -1201,7 +1164,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1220,7 +1182,7 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos); // adds the orignal piece
                         tempMove = startingPos;
                         tempMove += dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             tempMoves.Add(tempMove);
                             tempMove += dir;
@@ -1244,7 +1206,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove += dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove += dir;
@@ -1271,7 +1233,7 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos); // adds the orignal piece
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
                             tempMoves.Add(tempMove);
                             tempMove -= dir;
@@ -1295,7 +1257,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove -= dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove -= dir;
@@ -1327,9 +1289,8 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos);
                         tempMove = startingPos;
                         tempMove += dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                             tempMoves.Add(tempMove);
                             tempMove += dir;
@@ -1355,7 +1316,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                                 else
                                 {
-                                    nOMW++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
                                     pieceFound = true;
@@ -1371,7 +1331,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove += dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove += dir;
@@ -1397,9 +1357,8 @@ public class ChessBoardPVP : MonoBehaviour
                         tempMoves.Add(startingPos);
                         tempMove = startingPos;
                         tempMove -= dir;
-                        while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMB++;
                             tempMoves.Add(tempMove);
                             lightList.Add(tempMove);
                             tempMove -= dir;
@@ -1425,7 +1384,6 @@ public class ChessBoardPVP : MonoBehaviour
                                 }
                                 else
                                 {
-                                    nOMB++;
                                     lightList.Add(tempMove);
                                     pinnedPiece = tempMove;
                                     pieceFound = true;
@@ -1440,7 +1398,7 @@ public class ChessBoardPVP : MonoBehaviour
                         if (pieceFound == true)
                         {
                             tempMove -= dir;
-                            while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                            while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                             {
                                 tempMoves.Add(tempMove);
                                 tempMove -= dir;
@@ -1473,7 +1431,6 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                nOMW++;
                                 lightList.Add(tempMove);
                                 tempMove += dir;
                             }
@@ -1481,7 +1438,7 @@ public class ChessBoardPVP : MonoBehaviour
                     }
 
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
 
                 if (selectedPiece.tag == "Black")
@@ -1496,7 +1453,6 @@ public class ChessBoardPVP : MonoBehaviour
                         {
                             while (pinnedPiecePath[startingPos].Contains(tempMove))
                             {
-                                nOMB++;
                                 lightList.Add(tempMove);
                                 tempMove -= dir;
                             }
@@ -1504,13 +1460,13 @@ public class ChessBoardPVP : MonoBehaviour
                     }
 
                     //CHECK FOR PIN + PROTECTED PIECES
-                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+                    CheckPinAndProtectedPieces(selectedPiece, directions, startingPos, ref pWPieces, ref pBPieces);
                 }
             }
         }
     }
 
-    void KnightMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB)
+    void KnightMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
         Vector3 startingPos = selectedPiece.transform.localPosition;
         Vector3 tempMove;
@@ -1534,9 +1490,8 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         tempMove = startingPos;
                         tempMove += dir;
-                        if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        if (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
 
@@ -1552,7 +1507,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                                 else
                                 {
-                                    nOMW++;
                                     lightList.Add(tempMove);
                                 }
                             }
@@ -1571,9 +1525,8 @@ public class ChessBoardPVP : MonoBehaviour
                     {
                         tempMove = startingPos;
                         tempMove -= dir;
-                        if (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                        if (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
 
@@ -1589,7 +1542,6 @@ public class ChessBoardPVP : MonoBehaviour
 
                                 else
                                 {
-                                    nOMB++;
                                     lightList.Add(tempMove);
                                 }
                             }
@@ -1660,13 +1612,11 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (lineOfCheck.Contains(tempMove) && piecesPuttingKingInCheck == 1)
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMW++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1681,13 +1631,11 @@ public class ChessBoardPVP : MonoBehaviour
 
                         if (lineOfCheck.Contains(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
 
                         if (piecesChecking.Contains(tempMove))
                         {
-                            nOMB++;
                             lightList.Add(tempMove);
                         }
                     }
@@ -1738,14 +1686,15 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    void QueenMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB)
+    void QueenMovement(GameObject selectedPiece, ref List<Vector3> lightList, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
-        RookMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
-        BishopMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces, ref nOMW, ref nOMB);
+        RookMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
+        BishopMovement(selectedPiece, ref lightList, ref pWPieces, ref pBPieces);
     }
 
     public void CheckMateCheck(int nOMW, int nOMB)
     {
+        // A very basic yet efficent way of checking if checkmate is satisfied. if one player has no moves left and is in check, checkmate is true.
         if (whiteToMove)
         {
             if (check == true && nOMW == 0)
@@ -1762,8 +1711,9 @@ public class ChessBoardPVP : MonoBehaviour
         }
     }
 
-    void CheckPinAndProtectedPieces(GameObject selectedPiece, Vector3[] directions, Vector3 startingPos, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces, ref int nOMW, ref int nOMB)
+    void CheckPinAndProtectedPieces(GameObject selectedPiece, Vector3[] directions, Vector3 startingPos, ref List<Vector3> pWPieces, ref List<Vector3> pBPieces)
     {
+        //A Reusable method accross peices, uses the array of directions and checks for pins and protected pieces.
         bool pieceFound = false;
         if (selectedPiece.tag == "White")
         {
@@ -1774,7 +1724,7 @@ public class ChessBoardPVP : MonoBehaviour
                 Vector3 tempMove = startingPos;
                 tempMove += dir;
                 //regular movement with no pieces in the way
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                 {
                     tempMoves.Add(tempMove);
                     tempMove += dir;
@@ -1798,7 +1748,7 @@ public class ChessBoardPVP : MonoBehaviour
                 if (pieceFound == true)
                 {
                     tempMove += dir;
-                    while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                     {
                         tempMoves.Add(tempMove);
                         tempMove += dir;
@@ -1825,7 +1775,7 @@ public class ChessBoardPVP : MonoBehaviour
                 Vector3 tempMove = startingPos;
                 tempMove -= dir;
                 //regular movement with no pieces in the way
-                while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                 {
                     tempMoves.Add(tempMove);
                     tempMove -= dir;
@@ -1849,7 +1799,7 @@ public class ChessBoardPVP : MonoBehaviour
                 if (pieceFound == true)
                 {
                     tempMove -= dir;
-                    while (!piecePosition.ContainsKey(tempMove) && tempMove.x >= bXMin && tempMove.z >= bZMin && tempMove.x <= bXMax && tempMove.z <= bZMax)
+                    while (!piecePosition.ContainsKey(tempMove) && InBoardRange(tempMove))
                     {
                         tempMoves.Add(tempMove);
                         tempMove -= dir;
@@ -1879,6 +1829,7 @@ public class ChessBoardPVP : MonoBehaviour
 
     public string GetBoardState()
     {
+        //Used in it's entirety to create a complete fen string, with all 6 paramaters met.
         string fenString = "";
 
         #region Rules
@@ -2094,6 +2045,7 @@ public class ChessBoardPVP : MonoBehaviour
 
     public string PieceConverter(string pieceName, string pieceColour)
     {
+        //Used for converting Stockfish's UCI output, takes piece and it's colour and converts it accordingly.
         string s = "";
         if (pieceColour == "Black")
         {
@@ -2158,6 +2110,7 @@ public class ChessBoardPVP : MonoBehaviour
 
     public string ConvertPositionIntoBoardState(Vector3 currentPos)
     {
+        //Takes the postion on the board and converts it into Algebraic Notation
         string boardPos = "";
 
         if (currentPos.x.Equals(bXMin))
@@ -2231,6 +2184,7 @@ public class ChessBoardPVP : MonoBehaviour
 
     public Vector3 ConvertBoardStateIntoPosition(string algebraicNotation)
     {
+        // takes Algebraic notation and converts it into the current board positions.
         string[] characters = new string[algebraicNotation.Length];
         for (int i = 0; i < algebraicNotation.Length; i++)
         {
@@ -2309,5 +2263,14 @@ public class ChessBoardPVP : MonoBehaviour
 
         return position;
     }
-}
 
+    public bool InBoardRange(Vector3 currentPos)
+    {
+        //A check to ensure the current move being tested does not fall outside of the board, this also allows the board's size to be dynamic and take different sizes.
+        if (currentPos.x >= bXMin && currentPos.z >= bZMin && currentPos.x <= bXMax && currentPos.z <= bZMax)
+        {
+            return true;
+        }
+        else return false;
+    }
+}
